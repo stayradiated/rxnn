@@ -8,16 +8,20 @@ import { clearTokenFromStorage, getTokenFromStorage } from '$lib/token-storage'
 import { onMount } from 'svelte'
 import type { PageData } from './$types'
 
-export let data: PageData
+interface Props {
+  data: PageData
+}
 
-let token = ''
-let currentUser: any = null
+let { data }: Props = $props()
+
+let token = $state('')
+let currentUser: any = $state(null)
 let isLoading = false
 
 // Logout confirmation flow
-let showLogoutModal = false
-let tokenConfirmation = ''
-let logoutError = ''
+let showLogoutModal = $state(false)
+let tokenConfirmation = $state('')
+let logoutError = $state('')
 
 onMount(async () => {
   token = getTokenFromStorage() || ''
@@ -132,10 +136,10 @@ function confirmLogout() {
         <h2>👋 Welcome to Anonymous Voice!</h2>
         <p>No posts yet. Be the first to start a conversation!</p>
         <div class="first-post-actions">
-          <button on:click={() => goto('/post/text')} class="btn-primary btn-large">
+          <button onclick={() => goto('/post/text')} class="btn-primary btn-large">
             💬 Create Text Post
           </button>
-          <button on:click={() => goto('/post/poll')} class="btn-primary btn-large">
+          <button onclick={() => goto('/post/poll')} class="btn-primary btn-large">
             📊 Create Poll
           </button>
         </div>

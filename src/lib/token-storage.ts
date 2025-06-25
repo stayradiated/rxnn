@@ -1,4 +1,4 @@
-const TOKEN_KEY = 'survey-token'
+const TOKEN_KEY = 'rxnn'
 
 export function saveTokenToStorage(token: string): void {
   if (typeof window !== 'undefined' && window.localStorage) {

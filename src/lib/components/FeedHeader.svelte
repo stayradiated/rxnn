@@ -1,8 +1,12 @@
 <script lang="ts">
 import { goto } from '$app/navigation'
 
-export let currentUser: any = null
-export let onStartLogout: () => void
+interface Props {
+  currentUser?: any
+  onStartLogout: () => void
+}
+
+let { currentUser = null, onStartLogout }: Props = $props()
 
 function createTextPost() {
   goto('/post/text')
@@ -24,17 +28,17 @@ function createPoll() {
         </div>
         <div class="user-actions">
           <a href="/profile" class="btn-profile">Profile</a>
-          <button on:click={onStartLogout} class="btn-logout">Logout</button>
+          <button onclick={onStartLogout} class="btn-logout">Logout</button>
         </div>
       </div>
     {/if}
   </div>
 
   <div class="header-actions">
-    <button on:click={createTextPost} class="btn-primary btn-text">
+    <button onclick={createTextPost} class="btn-primary btn-text">
       💬 Create Text Post
     </button>
-    <button on:click={createPoll} class="btn-primary btn-poll">
+    <button onclick={createPoll} class="btn-primary btn-poll">
       📊 Create Poll
     </button>
   </div>

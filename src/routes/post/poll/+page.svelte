@@ -3,21 +3,22 @@ import { browser } from '$app/environment'
 import { goto } from '$app/navigation'
 import { getTokenFromStorage } from '$lib/token-storage'
 import { onMount } from 'svelte'
+import { preventDefault } from 'svelte/legacy'
 
 type PollType = 'radio' | 'scale'
 
 let token = ''
-let title = ''
-let content = ''
-let pollType: PollType = 'radio'
-let isLoading = false
-let error = ''
+let title = $state('')
+let content = $state('')
+let pollType: PollType = $state('radio')
+let isLoading = $state(false)
+let error = $state('')
 
-let radioOptions: string[] = ['']
-let scaleMin = 1
-let scaleMax = 5
-let scaleMinLabel = ''
-let scaleMaxLabel = ''
+let radioOptions: string[] = $state([''])
+let scaleMin = $state(1)
+let scaleMax = $state(5)
+let scaleMinLabel = $state('')
+let scaleMaxLabel = $state('')
 
 onMount(() => {
   token = getTokenFromStorage() || ''
@@ -112,7 +113,7 @@ async function submitPost() {
   <div class="composer-card">
     <h1>📊 Create Poll</h1>
 
-    <form on:submit|preventDefault={submitPost}>
+    <form onsubmit={preventDefault(submitPost)}>
       <div class="form-group">
         <label>Poll Type:</label>
         <div class="poll-type-grid">
@@ -164,16 +165,16 @@ async function submitPost() {
               <input
                 type="text"
                 bind:value={option}
-                on:input={(e) => updateOption(index, e.currentTarget.value)}
+                oninput={(e) => updateOption(index, e.currentTarget.value)}
                 placeholder="Option {index + 1}"
                 disabled={isLoading}
               />
               {#if radioOptions.length > 1}
-                <button type="button" on:click={() => removeOption(index)} class="btn-remove">×</button>
+                <button type="button" onclick={() => removeOption(index)} class="btn-remove">×</button>
               {/if}
             </div>
           {/each}
-          <button type="button" on:click={addOption} class="btn-add">+ Add Option</button>
+          <button type="button" onclick={addOption} class="btn-add">+ Add Option</button>
         </div>
 
       {:else if pollType === 'scale'}
@@ -217,7 +218,7 @@ async function submitPost() {
       {/if}
 
       <div class="form-actions">
-        <button type="button" on:click={() => goto('/feed')} class="btn-secondary" disabled={isLoading}>
+        <button type="button" onclick={() => goto('/feed')} class="btn-secondary" disabled={isLoading}>
           Cancel
         </button>
         <button type="submit" class="btn-primary" disabled={isLoading}>

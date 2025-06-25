@@ -10,9 +10,10 @@ export const POST: RequestHandler = async ({ request }) => {
       return json({ error: 'Token required' }, { status: 400 })
     }
 
-    // Validate token format (64 hex characters)
-    const tokenRegex = /^[a-f0-9]{64}$/
-    if (!tokenRegex.test(token)) {
+    // Validate token format (base64url encoded, ~27 characters)
+    // Base64url uses A-Z, a-z, 0-9, -, _ characters
+    const tokenRegex = /^[A-Za-z0-9_-]+$/
+    if (!tokenRegex.test(token) || token.length < 20 || token.length > 40) {
       return json(
         { valid: false, error: 'Invalid token format' },
         { status: 400 },
@@ -36,6 +37,7 @@ export const POST: RequestHandler = async ({ request }) => {
       user: {
         id: user.id,
         username: user.username,
+        avatar: user.avatar,
         token: user.token,
       },
     })

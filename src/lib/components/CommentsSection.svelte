@@ -1,13 +1,27 @@
 <script lang="ts">
-export let postId: number
-export let commentCount: number
-export let showComments = false
-export let comments: any[] = []
-export let newComment = ''
-export let isSubmitting = false
-export let onToggleComments: () => void
-export let onSubmitComment: () => void
-export let formatTimeAgo: (dateString: string) => string
+interface Props {
+  postId: number
+  commentCount: number
+  showComments?: boolean
+  comments?: any[]
+  newComment?: string
+  isSubmitting?: boolean
+  onToggleComments: () => void
+  onSubmitComment: () => void
+  formatTimeAgo: (dateString: string) => string
+}
+
+let {
+  postId,
+  commentCount,
+  showComments = false,
+  comments = [],
+  newComment = $bindable(''),
+  isSubmitting = false,
+  onToggleComments,
+  onSubmitComment,
+  formatTimeAgo,
+}: Props = $props()
 
 function toggleComments() {
   onToggleComments()
@@ -20,7 +34,7 @@ function submitComment() {
 
 <div class="comments-section">
   <button
-    on:click={toggleComments}
+    onclick={toggleComments}
     class="comments-toggle">
     💬 {commentCount} comment{commentCount !== 1 ? 's' : ''}
     <span class="toggle-icon">{showComments ? '▼' : '▶'}</span>
@@ -54,7 +68,7 @@ function submitComment() {
           rows="2"
           disabled={isSubmitting}></textarea>
         <button
-          on:click={submitComment}
+          onclick={submitComment}
           class="btn-primary btn-small"
           disabled={!newComment?.trim() || isSubmitting}>
           {isSubmitting ? 'Posting...' : 'Post Comment'}

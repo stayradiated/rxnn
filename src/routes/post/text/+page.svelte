@@ -3,12 +3,13 @@ import { browser } from '$app/environment'
 import { goto } from '$app/navigation'
 import { getTokenFromStorage } from '$lib/token-storage'
 import { onMount } from 'svelte'
+import { preventDefault } from 'svelte/legacy'
 
 let token = ''
-let title = ''
-let content = ''
-let isLoading = false
-let error = ''
+let title = $state('')
+let content = $state('')
+let isLoading = $state(false)
+let error = $state('')
 
 onMount(() => {
   token = getTokenFromStorage() || ''
@@ -70,7 +71,7 @@ async function submitPost() {
   <div class="composer-card">
     <h1>💬 Create Text Post</h1>
 
-    <form on:submit|preventDefault={submitPost}>
+    <form onsubmit={preventDefault(submitPost)}>
       <div class="form-group">
         <label for="title">Title *</label>
         <input
@@ -101,7 +102,7 @@ async function submitPost() {
       {/if}
 
       <div class="form-actions">
-        <button type="button" on:click={() => goto('/feed')} class="btn-secondary" disabled={isLoading}>
+        <button type="button" onclick={() => goto('/feed')} class="btn-secondary" disabled={isLoading}>
           Cancel
         </button>
         <button type="submit" class="btn-primary" disabled={isLoading}>

@@ -1,10 +1,21 @@
 <script lang="ts">
-export let show = false
-export let token = ''
-export let tokenConfirmation = ''
-export let logoutError = ''
-export let onCancel: () => void
-export let onConfirm: () => void
+interface Props {
+  show?: boolean
+  token?: string
+  tokenConfirmation?: string
+  logoutError?: string
+  onCancel: () => void
+  onConfirm: () => void
+}
+
+let {
+  show = false,
+  token = '',
+  tokenConfirmation = $bindable(''),
+  logoutError = '',
+  onCancel,
+  onConfirm,
+}: Props = $props()
 
 function handleOverlayClick() {
   onCancel()
@@ -20,14 +31,14 @@ function copyToken() {
 </script>
 
 {#if show}
-  <div class="modal-overlay" on:click={handleOverlayClick}>
-    <div class="modal-content" on:click={handleModalClick}>
+  <div class="modal-overlay" onclick={handleOverlayClick}>
+    <div class="modal-content" onclick={handleModalClick}>
       <h2>Confirm Logout</h2>
       <p>Before logging out, please ensure you have a copy of your secret token:</p>
 
       <div class="token-display-box">
         <code class="token-text">{token}</code>
-        <button on:click={copyToken} class="btn-copy-small">📋</button>
+        <button onclick={copyToken} class="btn-copy-small">📋</button>
       </div>
 
       <p>To continue, please paste your token below to confirm you have it saved:</p>
@@ -46,9 +57,9 @@ function copyToken() {
       {/if}
 
       <div class="modal-actions">
-        <button on:click={onCancel} class="btn-secondary">Cancel</button>
+        <button onclick={onCancel} class="btn-secondary">Cancel</button>
         <button
-          on:click={onConfirm}
+          onclick={onConfirm}
           class="btn-danger"
           disabled={!tokenConfirmation.trim()}>
           Logout

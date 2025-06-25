@@ -3,24 +3,41 @@ import { goto } from '$app/navigation'
 import CommentsSection from './CommentsSection.svelte'
 import PollSection from './PollSection.svelte'
 
-export let post: any
-export let token: string
-export let currentUser: any = null
-export let formatTimeAgo: (dateString: string) => string
-export let getPostTypeIcon: (postType: string) => string
-export let getPostTypeLabel: (postType: string) => string
+interface Props {
+  post: any
+  token: string
+  currentUser?: any
+  formatTimeAgo: (dateString: string) => string
+  getPostTypeIcon: (postType: string) => string
+  getPostTypeLabel: (postType: string) => string
+  // Interactive poll state for this post
+  pollResponses?: any
+  pollResults?: any
+  userResponse?: any
+  showPollResults?: boolean
+  // Comments state for this post
+  showComments?: boolean
+  postComments?: any[]
+  newComment?: string
+  commentSubmitting?: boolean
+}
 
-// Interactive poll state for this post
-export let pollResponses: any = {}
-export let pollResults: any = null
-export let userResponse: any = null
-export let showPollResults = false
-
-// Comments state for this post
-export let showComments = false
-export let postComments: any[] = []
-export let newComment = ''
-export let commentSubmitting = false
+let {
+  post = $bindable(),
+  token,
+  currentUser = null,
+  formatTimeAgo,
+  getPostTypeIcon,
+  getPostTypeLabel,
+  pollResponses = $bindable({}),
+  pollResults = $bindable(null),
+  userResponse = $bindable(null),
+  showPollResults = $bindable(false),
+  showComments = $bindable(false),
+  postComments = $bindable([]),
+  newComment = $bindable(''),
+  commentSubmitting = $bindable(false),
+}: Props = $props()
 
 // Poll interaction functions
 async function submitPollResponse(responseData: any) {

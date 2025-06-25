@@ -1,15 +1,20 @@
 <script lang="ts">
 import { browser } from '$app/environment'
 import { goto } from '$app/navigation'
+import { preventDefault } from 'svelte/legacy'
 import type { PageData } from './$types'
 
-export let data: PageData
+interface Props {
+  data: PageData
+}
 
-let username = data.user.username
-let avatar = data.user.avatar
-let isSubmitting = false
-let message = ''
-let messageType = '' // 'success' or 'error'
+let { data }: Props = $props()
+
+let username = $state(data.user.username)
+let avatar = $state(data.user.avatar)
+let isSubmitting = $state(false)
+let message = $state('')
+let messageType = $state('') // 'success' or 'error'
 
 async function updateProfile() {
   if (!browser) return
@@ -73,7 +78,7 @@ function goBack() {
 <div class="profile-page">
   <div class="profile-container">
     <div class="profile-header">
-      <button class="btn-back" on:click={goBack}>
+      <button class="btn-back" onclick={goBack}>
         ← Back to Feed
       </button>
       <h1>Profile Settings</h1>
@@ -92,7 +97,7 @@ function goBack() {
         {/if}
       </div>
 
-      <form on:submit|preventDefault={updateProfile}>
+      <form onsubmit={preventDefault(updateProfile)}>
         <div class="form-group">
           <label for="username">Username</label>
           <input
@@ -137,8 +142,7 @@ function goBack() {
           <button
             type="submit"
             class="btn-primary"
-            disabled={isSubmitting}
-          >
+            disabled={isSubmitting}>
             {isSubmitting ? 'Updating...' : 'Update Profile'}
           </button>
         </div>

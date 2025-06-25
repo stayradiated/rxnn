@@ -1,11 +1,23 @@
 <script lang="ts">
-export let post: any
-export let pollResponses: any = {}
-export let pollResults: any = null
-export let userResponse: any = null
-export let showResults = false
-export let onSubmitResponse: (responseData: any) => void
-export let onEditResponse: () => void
+interface Props {
+  post: any
+  pollResponses?: any
+  pollResults?: any
+  userResponse?: any
+  showResults?: boolean
+  onSubmitResponse: (responseData: any) => void
+  onEditResponse: () => void
+}
+
+let {
+  post,
+  pollResponses = $bindable({}),
+  pollResults = null,
+  userResponse = null,
+  showResults = false,
+  onSubmitResponse,
+  onEditResponse,
+}: Props = $props()
 
 function submitResponse() {
   const response = pollResponses
@@ -91,7 +103,7 @@ if (post.post_type === 'scale' && !pollResponses.scaleValue) {
             {:else if post.post_type === 'scale'}
               {userResponse.scaleValue}
             {/if}
-            <button on:click={editResponse} class="btn-edit">
+            <button onclick={editResponse} class="btn-edit">
               Edit Response
             </button>
           </div>
@@ -148,7 +160,7 @@ if (post.post_type === 'scale' && !pollResponses.scaleValue) {
         {/if}
 
         <button
-          on:click={submitResponse}
+          onclick={submitResponse}
           class="btn-primary poll-submit"
           disabled={isSubmitDisabled()}>
           Submit Response
