@@ -5,7 +5,6 @@ import PollSection from './PollSection.svelte'
 
 interface Props {
   post: any
-  token: string
   currentUser?: any
   formatTimeAgo: (dateString: string) => string
   getPostTypeIcon: (postType: string) => string
@@ -24,17 +23,16 @@ interface Props {
 
 let {
   post = $bindable(),
-  token,
   currentUser = null,
   formatTimeAgo,
   getPostTypeIcon,
   getPostTypeLabel,
   pollResponses = $bindable({}),
-  pollResults = $bindable(null),
-  userResponse = $bindable(null),
-  showPollResults = $bindable(false),
+  pollResults = $bindable(post.pollResults || null),
+  userResponse = $bindable(post.userResponse || null),
+  showPollResults = $bindable(!!post.pollResults),
   showComments = $bindable(false),
-  postComments = $bindable([]),
+  postComments = $bindable(post.comments || []),
   newComment = $bindable(''),
   commentSubmitting = $bindable(false),
 }: Props = $props()
@@ -46,7 +44,6 @@ async function submitPollResponse(responseData: any) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ postId: post.id, responseData }),
     })
@@ -57,6 +54,9 @@ async function submitPollResponse(responseData: any) {
       userResponse = responseData
       showPollResults = true
       pollResponses = {} // Clear form
+
+      // Update response count
+      post.response_count += 1
     } else {
       console.error('Failed to submit poll response')
     }
@@ -71,43 +71,9 @@ function editPollResponse() {
 }
 
 // Comments functions
-async function toggleComments() {
-  if (!showComments) {
-    // Load comments if not already loaded
-    if (!postComments || postComments.length === 0) {
-      await loadComments()
-    }
-  }
+function toggleComments() {
+  // Comments are pre-loaded from server, just toggle visibility
   showComments = !showComments
-}
-
-async function loadComments() {
-  try {
-    const response = await fetch(`/api/posts/${post.id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      postComments = data.comments || []
-
-      // Also load poll results and user response if it's a poll
-      if (data.post.post_type !== 'text') {
-        if (data.pollResults) {
-          pollResults = data.pollResults
-          showPollResults = true
-        }
-        if (data.userResponse) {
-          userResponse = data.userResponse
-          showPollResults = true
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Error loading comments:', error)
-  }
 }
 
 async function submitComment() {
@@ -121,7 +87,6 @@ async function submitComment() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ postId: post.id, content }),
     })

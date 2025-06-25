@@ -247,6 +247,154 @@ export function getPostsForFeed(_userId?: number) {
   }))
 }
 
+export function getPostsForFeedWithDetails(userId?: number) {
+  const db = getDatabase()
+
+  const posts = db
+    .prepare(`
+      SELECT 
+        p.*,
+        u.username,
+        u.avatar,
+        (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
+        (SELECT COUNT(*) FROM poll_responses pr WHERE pr.post_id = p.id) as response_count
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      ORDER BY p.created_at DESC
+    `)
+    .all()
+
+  return posts.map((post: any) => {
+    const postData = {
+      ...post,
+      poll_config: post.poll_config ? JSON.parse(post.poll_config) : null,
+    }
+
+    // Get comments for this post
+    postData.comments = getCommentsForPost(post.id)
+
+    // Get poll results if it's a poll
+    if (post.post_type !== 'text') {
+      postData.pollResults = getPollAggregates(post.id)
+
+      // Get user's response if authenticated
+      if (userId) {
+        postData.userResponse = getUserPollResponse(userId, post.id)
+      }
+    }
+
+    return postData
+  })
+}
+
+export function getPollAggregates(postId: number) {
+  const db = getDatabase()
+
+  // Get the post to understand the poll structure
+  const post = getPostById(postId)
+  if (!post || post.post_type === 'text') {
+    return null
+  }
+
+  const pollConfig = post.poll_config
+
+  // Get all responses for aggregation
+  const responses = db
+    .prepare(`
+      SELECT response_data 
+      FROM poll_responses 
+      WHERE post_id = ?
+    `)
+    .all(postId)
+
+  const totalResponses = responses.length
+  const responseData = responses.map((r: any) => JSON.parse(r.response_data))
+
+  if (post.post_type === 'radio') {
+    // For radio polls, count votes for each option
+    const optionCounts: { [key: string]: number } = {}
+
+    pollConfig.options.forEach((option: string) => {
+      optionCounts[option] = 0
+    })
+
+    responseData.forEach((data: any) => {
+      if (
+        data.selectedOption &&
+        Object.hasOwn(optionCounts, data.selectedOption)
+      ) {
+        optionCounts[data.selectedOption]++
+      }
+    })
+
+    return {
+      totalResponses,
+      type: 'radio',
+      options: Object.entries(optionCounts).map(([option, count]) => ({
+        option,
+        count,
+        percentage:
+          totalResponses > 0 ? Math.round((count / totalResponses) * 100) : 0,
+      })),
+    }
+  }
+  if (post.post_type === 'scale') {
+    // For scale polls, calculate statistics
+    const values = responseData
+      .map((data: any) => data.value)
+      .filter((val: any) => typeof val === 'number')
+
+    if (values.length === 0) {
+      return {
+        totalResponses,
+        type: 'scale',
+        average: 0,
+        min: pollConfig.min,
+        max: pollConfig.max,
+        distribution: [],
+      }
+    }
+
+    const average =
+      values.reduce((sum: number, val: number) => sum + val, 0) / values.length
+
+    // Create distribution buckets
+    const buckets = 5 // Number of buckets for distribution
+    const bucketSize = (pollConfig.max - pollConfig.min) / buckets
+    const distribution = Array(buckets).fill(0)
+
+    values.forEach((value: number) => {
+      const bucketIndex = Math.min(
+        Math.floor((value - pollConfig.min) / bucketSize),
+        buckets - 1,
+      )
+      distribution[bucketIndex]++
+    })
+
+    return {
+      totalResponses,
+      type: 'scale',
+      average: Math.round(average * 100) / 100,
+      min: Math.min(...values),
+      max: Math.max(...values),
+      configMin: pollConfig.min,
+      configMax: pollConfig.max,
+      distribution: distribution.map((count: number, index: number) => ({
+        rangeStart: pollConfig.min + index * bucketSize,
+        rangeEnd: pollConfig.min + (index + 1) * bucketSize,
+        count,
+        percentage: Math.round((count / totalResponses) * 100),
+      })),
+    }
+  }
+
+  return {
+    totalResponses,
+    type: post.post_type,
+    responses: responseData,
+  }
+}
+
 export function getPostById(id: number) {
   const db = getDatabase()
 

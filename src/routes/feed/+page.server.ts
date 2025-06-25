@@ -1,9 +1,9 @@
-import { getPostsForFeed } from '$lib/platform-database'
+import { getPostsForFeedWithDetails } from '$lib/platform-database'
 import type { PageServerLoad } from './$types'
 
 export const load: PageServerLoad = async ({ locals }) => {
-  // Get posts for feed and user data from session
-  const posts = getPostsForFeed()
+  // Get posts for feed with comments and poll aggregates
+  const posts = getPostsForFeedWithDetails(locals.user?.id)
 
   return {
     posts,

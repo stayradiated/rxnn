@@ -1,5 +1,5 @@
 import {
-  getPollResults,
+  getPollAggregates,
   getPostById,
   submitPollResponse,
 } from '$lib/platform-database'
@@ -41,8 +41,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     // Submit the response
     submitPollResponse(user.id, postId, responseData)
 
-    // Get updated poll results
-    const pollResults = getPollResults(postId)
+    // Get updated poll aggregates (no raw data exposed)
+    const pollResults = getPollAggregates(postId)
 
     console.log('Poll response submitted by', user.username, 'for post', postId)
 

@@ -1,6 +1,6 @@
 import {
   getCommentsForPost,
-  getPollResults,
+  getPollAggregates,
   getPostById,
   getUserPollResponse,
   updatePost,
@@ -32,7 +32,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     let userResponse = null
 
     if (post.post_type !== 'text') {
-      pollResults = getPollResults(postId)
+      pollResults = getPollAggregates(postId)
 
       if (user) {
         userResponse = getUserPollResponse(user.id, postId)
