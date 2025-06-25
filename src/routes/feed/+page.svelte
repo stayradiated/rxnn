@@ -140,8 +140,11 @@ function confirmLogout() {
     </div>
 
     <div class="header-actions">
-      <button on:click={() => goto('/post/new')} class="btn-primary">
-        ✏️ Create Post
+      <button on:click={() => goto('/post/text')} class="btn-primary btn-text">
+        💬 Create Text Post
+      </button>
+      <button on:click={() => goto('/post/poll')} class="btn-primary btn-poll">
+        📊 Create Poll
       </button>
     </div>
   </header>
@@ -152,9 +155,14 @@ function confirmLogout() {
       <div class="empty-state">
         <h2>👋 Welcome to Anonymous Voice!</h2>
         <p>No posts yet. Be the first to start a conversation!</p>
-        <button on:click={() => goto('/post/new')} class="btn-primary btn-large">
-          Create First Post
-        </button>
+        <div class="first-post-actions">
+          <button on:click={() => goto('/post/text')} class="btn-primary btn-large">
+            💬 Create Text Post
+          </button>
+          <button on:click={() => goto('/post/poll')} class="btn-primary btn-large">
+            📊 Create Poll
+          </button>
+        </div>
       </div>
     {:else}
       {#each data.posts as post (post.id)}
@@ -337,7 +345,14 @@ function confirmLogout() {
 
   .header-actions {
     display: flex;
+    gap: 0.75rem;
+  }
+
+  .first-post-actions {
+    display: flex;
     gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
   .btn-primary {
@@ -635,6 +650,16 @@ function confirmLogout() {
       flex-direction: column;
       align-items: stretch;
       gap: 1rem;
+    }
+
+    .header-actions {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .first-post-actions {
+      flex-direction: column;
+      gap: 0.75rem;
     }
 
     .header-content {
