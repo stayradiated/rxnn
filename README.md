@@ -1,96 +1,274 @@
-# Survey Questions
+# Anonymous Employee Survey
 
-## 1 · Intro Blurb
+A privacy-focused survey application built with SvelteKit and SQLite for conducting anonymous employee feedback with real-time aggregated results.
 
-> **This survey is anonymous and will stay open indefinitely.**
-> Responses (but *not* your identity) will be displayed live on a shared dashboard so everyone can see aggregate results as they come in.
+## Overview
 
----
+This application enables organizations to conduct sensitive employee surveys while maintaining complete anonymity. Key features include:
 
-## 2 · Role Context
+- **Anonymous token-based system** - No personal data collection
+- **One-shot survey approach** - Single response per person with update capability
+- **Privacy protection** - Results only shown with minimum response thresholds
+- **Real-time dashboard** - Live aggregated results without individual data exposure
+- **Universal "Prefer not to answer"** - Every question includes privacy option
 
-1. **Which department are you in?**
-   ☐ Engineering
-   ☐ Product
-   ☐ Marketing
-   ☐ Sales
-   ☐ Customer Success
-   ☐ Operations
-   ☐ Leadership
-   ☐ Board
+## Architecture
 
+### Tech Stack
 
-2. **How long have you worked at Runn?**
-   ☐ 0–1 year
-   ☐ 1–2 years
-   ☐ 2–3 years
-   ☐ 3+ years
+- **Frontend**: SvelteKit 2.x with TypeScript
+- **Database**: SQLite with better-sqlite3
+- **Styling**: Vanilla CSS with responsive design
+- **Deployment**: Fly.io compatible (Node.js adapter)
 
----
+### Project Structure
 
-## 3 · Four-Day Week Usage
+```
+src/
+├── lib/
+│   ├── components/          # Reusable survey components
+│   │   ├── RadioGroup.svelte      # Multiple choice questions
+│   │   ├── ScaleInput.svelte      # Likert scale (1-5) ratings
+│   │   ├── SliderInput.svelte     # Percentage sliders
+│   │   ├── TextInput.svelte       # Open text responses
+│   │   ├── CheckboxGroup.svelte   # Multiple selection
+│   │   └── SectionNavigation.svelte # Survey section jumping
+│   ├── database.ts          # SQLite operations & schema
+│   └── token-storage.ts     # localStorage token management
+├── routes/
+│   ├── +page.svelte         # Landing page with start/edit options
+│   ├── survey/
+│   │   ├── +page.server.ts  # Token validation & response loading
+│   │   └── +page.svelte     # Main survey with 9 steps
+│   ├── results/
+│   │   ├── +page.server.ts  # Aggregated data fetching
+│   │   └── +page.svelte     # Public results dashboard
+│   └── api/responses/
+│       └── +server.ts       # REST API for saving responses
+└── app.d.ts                 # TypeScript declarations
+```
 
-3. **Roughly what % of weeks do you work a four-day (32 h) week?**
-   (Slider from 0 %—Never to 100 %—Every single week)
+## Key Concepts
 
-4. **If four-day remains optional, how likely are you to choose it?**
-   1 = Not at all … 5 = Absolutely
+### Anonymous Token System
 
----
+- **64-character hex tokens** generated server-side via `crypto.randomBytes(32)`
+- **URL-based persistence**: `/survey?token=<token>` for bookmarking
+- **localStorage backup**: Saved locally for convenience (not required)
+- **One-shot enforcement**: Cannot create multiple responses per device
 
-## 4 · Importance & Impact
+### Privacy Protection
 
-5. **How important is a permanent four-day week to you?**
-   1 = Not important … 5 = Critical
+- **Minimum threshold**: Results only visible with 5+ total responses
+- **Demographic filtering**: Combinations with <3 responses are hidden
+- **"Prefer not to answer"**: Every question includes privacy option
+- **No individual data**: Only aggregated results ever displayed
 
-6. **If it ends, how likely are you to look for a new role?**
-   1 = Very unlikely … 5 = Already looking
+### Database Schema
 
----
+```sql
+-- Anonymous user tokens
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  token TEXT UNIQUE NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
-## 5 · Redundancy Consideration
+-- Survey responses (JSON-encoded answers)
+CREATE TABLE responses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  question_id TEXT NOT NULL,
+  answer TEXT NOT NULL,  -- JSON string
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  UNIQUE (user_id, question_id)  -- Upsert support
+);
+```
 
-7. **Right now, how strongly are you considering voluntary redundancy?**
-   (Slider 0 %—Not at all to 100 %—Already signed up)
+## Component System
 
-8. **How critical is this paycheck to your household?**
-   1 = Manageable … 5 = Can’t do without it
+### Survey Components
 
----
+All components support TypeScript and include "prefer not to answer" options:
 
-## 6 · Pay-/Hours-Cut Trade-offs
+#### RadioGroup
+```svelte
+<RadioGroup
+  label="Question text"
+  name="unique_field_name"
+  bind:value={responses.fieldName}
+  options={[
+    { value: 'option1', label: 'Option 1' },
+    { value: 'option2', label: 'Option 2' }
+  ]}
+  allowPreferNotToAnswer={true}  // default: true
+/>
+```
 
-9. **What % pay-cut would you accept over 12 months to avoid any layoffs?**
-   ☐ 0 % ☐ 5 % ☐ 10 % ☐ 15 % ☐ 20 % ☐ >20 %
+#### ScaleInput
+```svelte
+<ScaleInput
+  label="Rate from 1-5"
+  name="unique_field_name"
+  bind:value={responses.fieldName}
+  min={1}
+  max={5}
+  minLabel="1 = Low"
+  maxLabel="5 = High"
+/>
+```
 
-10. **If the cut were only 6 months, would your answer change?**
-    (Same scale)
+#### SliderInput
+```svelte
+<SliderInput
+  label="Percentage question"
+  bind:value={responses.fieldName}
+  min={0}
+  max={100}
+  unit="%"
+  minLabel="0% - Never"
+  maxLabel="100% - Always"
+/>
+```
 
-11. **If only 3 months?**
-    (Same scale)
+#### TextInput
+```svelte
+<TextInput
+  label="Open feedback"
+  bind:value={responses.fieldName}
+  placeholder="Share your thoughts..."
+  rows={4}
+  maxLength={500}
+/>
+```
 
-12. **Could you reduce hours to preserve a 4-day pattern?**
-    ☐ 32 h→30 h (≈ 6 % cut)
-    ☐ 32 h→28 h (≈ 13 % cut)
-    ☐ 32 h→24 h (≈ 25 % cut)
-    ☐ None of these
+### Privacy Response Values
 
----
+All "prefer not to answer" selections save as: `"prefer-not-to-answer"`
 
-## 7 · Well-Being & Trust
+This consistent value enables:
+- Easy filtering in aggregation queries
+- Response pattern analysis
+- Privacy compliance tracking
 
-13. **Current stress level about these changes**
-    1 = Low … 5 = Severe
+## Development
 
-14. **Trust in leadership right now**
-    1 = None … 5 = Total
+### Setup
 
----
+```bash
+# Install dependencies
+pnpm install
 
-## 8 · Meta & Open Feedback
+# Start development server
+pnpm dev
 
-15. **What’s missing?**
-    *“What other questions should we ask?”* (open text)
+# Type checking
+pnpm check
 
-16. **Anything else you want colleagues to know?**
-    (open text)
+# Code formatting
+pnpm tidy
+```
+
+### Database
+
+SQLite database is automatically created on first run:
+- **Development**: `survey.db` in project root
+- **Production**: Uses `DATABASE_PATH` environment variable
+
+#### Key Functions
+
+```typescript
+// User management
+findOrCreateUser(token: string)
+getUserResponses(userId: number)
+
+// Response handling
+saveResponse(userId: number, questionId: string, answer: any)
+saveMultipleResponses(userId: number, responses: Record<string, any>)
+
+// Public data
+getAggregatedResults()  // Privacy-filtered aggregated data
+```
+
+### Adding New Questions
+
+1. **Add to survey component** (`src/routes/survey/+page.svelte`)
+2. **Choose appropriate component** (RadioGroup, ScaleInput, etc.)
+3. **Bind to responses object**: `bind:value={responses.newFieldName}`
+4. **Auto-save included**: Responses save on step navigation
+
+### Privacy Guidelines
+
+- **Never log tokens** beyond first 8 characters
+- **No IP tracking** or session storage
+- **Aggregate only**: Individual responses never exposed
+- **Minimum thresholds**: Always check response counts before displaying data
+- **Demographic protection**: Filter combinations with <3 responses
+
+## Survey Structure
+
+The survey consists of 9 steps:
+
+1. **Introduction** - Welcome & token explanation
+2. **Role Context** - Department & tenure (2 questions)
+3. **Four-Day Week Usage** - Current usage & preferences (2 questions)
+4. **Importance & Impact** - Priority & job considerations (2 questions)
+5. **Redundancy** - Voluntary redundancy & finances (2 questions)
+6. **Pay/Hours Trade-offs** - Salary & time reductions (4 questions)
+7. **Well-Being & Trust** - Stress & leadership confidence (2 questions)
+8. **Open Feedback** - Missing questions & comments (2 questions)
+9. **Complete** - Final save & navigation options
+
+Total: **16 substantive questions** with universal privacy options
+
+## Deployment
+
+### Environment Variables
+
+```bash
+# Database location (optional)
+DATABASE_PATH=/data/survey.db
+
+# Node environment
+NODE_ENV=production
+```
+
+### Fly.io Deployment
+
+The app includes Fly.io configuration with:
+- Node.js adapter for SvelteKit
+- SQLite on persistent volume
+- Health check endpoint
+
+### Build Process
+
+```bash
+# Production build
+pnpm build
+
+# Preview production build
+pnpm preview
+```
+
+## Security Considerations
+
+- **No authentication required** - Intentionally anonymous
+- **Rate limiting recommended** - Prevent token generation abuse
+- **HTTPS required** - Protect tokens in transit
+- **Database backups** - Regular SQLite file backups
+- **Token expiration** - Consider implementing time-based expiry
+
+## Contributing
+
+- **TypeScript required** - All new code must be typed
+- **Component patterns** - Follow existing component structure
+- **Privacy first** - Always consider anonymity implications
+- **Test locally** - Verify complete survey flow
+- **Format code** - Run `pnpm tidy` before commits
+
+## License
+
+[Add your license here]
