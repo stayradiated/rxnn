@@ -19,6 +19,7 @@ export function clearTokenFromStorage(): void {
   }
 }
 
+// TODO: unused
 export function hasStoredToken(): boolean {
   const token = getTokenFromStorage()
   return token !== null && token.length === 64

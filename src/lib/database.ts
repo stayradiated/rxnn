@@ -195,44 +195,6 @@ export function getAggregatedResults() {
   }
 }
 
-// Demographic filtering for privacy
-export function getFilteredDemographics() {
-  const db = getDatabase()
-
-  // Only show demographic combinations with 3+ responses
-  const demographics = db
-    .prepare(`
-		SELECT u.id, 
-			   JSON_EXTRACT(r1.answer, '$') as department,
-			   JSON_EXTRACT(r2.answer, '$') as tenure
-		FROM users u
-		LEFT JOIN responses r1 ON u.id = r1.user_id AND r1.question_id = 'department'
-		LEFT JOIN responses r2 ON u.id = r2.user_id AND r2.question_id = 'tenure'
-		WHERE r1.answer IS NOT NULL AND r2.answer IS NOT NULL
-	`)
-    .all() as Array<{ id: number; department: string; tenure: string }>
-
-  // Count combinations
-  const combinations: Record<string, number> = {}
-  for (const row of demographics) {
-    const key = `${row.department}-${row.tenure}`
-    combinations[key] = (combinations[key] || 0) + 1
-  }
-
-  // Filter out combinations with < 3 responses
-  const filtered = Object.entries(combinations)
-    .filter(([_, count]) => count >= 3)
-    .reduce(
-      (acc, [key, count]) => {
-        acc[key] = count
-        return acc
-      },
-      {} as Record<string, number>,
-    )
-
-  return filtered
-}
-
 // Initialize database on module load in production
 if (process.env.NODE_ENV === 'production') {
   initDatabase()

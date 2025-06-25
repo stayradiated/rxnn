@@ -1,0 +1,64 @@
+import { authenticateRequest, requireAuth } from '$lib/auth-helper'
+import {
+  getPollResults,
+  getPostById,
+  submitPollResponse,
+} from '$lib/platform-database'
+import { json } from '@sveltejs/kit'
+import type { RequestHandler } from './$types'
+
+export const POST: RequestHandler = async ({ request }) => {
+  try {
+    const user = await authenticateRequest(request)
+    requireAuth(user)
+
+    const { postId, responseData } = await request.json()
+
+    // Validate input
+    if (!postId || typeof postId !== 'number') {
+      return json({ error: 'Post ID is required' }, { status: 400 })
+    }
+
+    if (!responseData) {
+      return json({ error: 'Response data is required' }, { status: 400 })
+    }
+
+    // Verify post exists and is a poll
+    const post = getPostById(postId)
+    if (!post) {
+      return json({ error: 'Post not found' }, { status: 404 })
+    }
+
+    if (post.post_type === 'text') {
+      return json(
+        { error: 'Cannot submit poll response to text post' },
+        { status: 400 },
+      )
+    }
+
+    // Submit the response
+    submitPollResponse(user?.id, postId, responseData)
+
+    // Get updated poll results
+    const pollResults = getPollResults(postId)
+
+    console.log(
+      'Poll response submitted by',
+      user?.username,
+      'for post',
+      postId,
+    )
+
+    return json({
+      success: true,
+      pollResults,
+    })
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    console.error('Error submitting poll response:', error)
+    return json({ error: 'Failed to submit response' }, { status: 500 })
+  }
+}
