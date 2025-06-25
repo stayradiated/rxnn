@@ -2,13 +2,18 @@
 import { browser } from '$app/environment'
 import { goto } from '$app/navigation'
 import { page } from '$app/state'
+import CheckboxGroup from '$lib/components/CheckboxGroup.svelte'
+import RadioGroup from '$lib/components/RadioGroup.svelte'
+import ScaleInput from '$lib/components/ScaleInput.svelte'
+import SliderInput from '$lib/components/SliderInput.svelte'
+import TextInput from '$lib/components/TextInput.svelte'
 import type { PageData } from './$types'
 
 export let data: PageData
 
 let responses = data.responses || {}
 let currentStep = 1
-const totalSteps = 8
+const totalSteps = 9
 
 async function nextStep() {
   if (currentStep < totalSteps) {
@@ -97,71 +102,211 @@ async function handleStepChange() {
       <div class="step">
         <h2>Role Context</h2>
 
-        <div class="question">
-          <label>1. Which department are you in?</label>
-          <div class="options">
-            <label><input type="radio" name="department" value="engineering" bind:group={responses.department} /> Engineering</label>
-            <label><input type="radio" name="department" value="product" bind:group={responses.department} /> Product</label>
-            <label><input type="radio" name="department" value="marketing" bind:group={responses.department} /> Marketing</label>
-            <label><input type="radio" name="department" value="sales" bind:group={responses.department} /> Sales</label>
-            <label><input type="radio" name="department" value="customer-success" bind:group={responses.department} /> Customer Success</label>
-            <label><input type="radio" name="department" value="operations" bind:group={responses.department} /> Operations</label>
-            <label><input type="radio" name="department" value="leadership" bind:group={responses.department} /> Leadership</label>
-            <label><input type="radio" name="department" value="board" bind:group={responses.department} /> Board</label>
-            <label><input type="radio" name="department" value="prefer-not-to-say" bind:group={responses.department} /> Prefer not to say</label>
-          </div>
-        </div>
+        <RadioGroup
+          label="1. Which department are you in?"
+          name="department"
+          bind:value={responses.department}
+          options={[
+            { value: 'engineering', label: 'Engineering' },
+            { value: 'product', label: 'Product' },
+            { value: 'marketing', label: 'Marketing' },
+            { value: 'sales', label: 'Sales' },
+            { value: 'customer-success', label: 'Customer Success' },
+            { value: 'operations', label: 'Operations' },
+            { value: 'leadership', label: 'Leadership' },
+            { value: 'board', label: 'Board' },
+            { value: 'prefer-not-to-say', label: 'Prefer not to say' }
+          ]}
+        />
 
-        <div class="question">
-          <label>2. How long have you worked at Runn?</label>
-          <div class="options">
-            <label><input type="radio" name="tenure" value="0-1" bind:group={responses.tenure} /> 0–1 year</label>
-            <label><input type="radio" name="tenure" value="1-2" bind:group={responses.tenure} /> 1–2 years</label>
-            <label><input type="radio" name="tenure" value="2-3" bind:group={responses.tenure} /> 2–3 years</label>
-            <label><input type="radio" name="tenure" value="3+" bind:group={responses.tenure} /> 3+ years</label>
-            <label><input type="radio" name="tenure" value="prefer-not-to-say" bind:group={responses.tenure} /> Prefer not to say</label>
-          </div>
-        </div>
+        <RadioGroup
+          label="2. How long have you worked at Runn?"
+          name="tenure"
+          bind:value={responses.tenure}
+          options={[
+            { value: '0-1', label: '0–1 year' },
+            { value: '1-2', label: '1–2 years' },
+            { value: '2-3', label: '2–3 years' },
+            { value: '3+', label: '3+ years' },
+            { value: 'prefer-not-to-say', label: 'Prefer not to say' }
+          ]}
+        />
       </div>
     {:else if currentStep === 3}
       <div class="step">
         <h2>Four-Day Week Usage</h2>
 
-        <div class="question">
-          <label>3. Roughly what % of weeks do you work a four-day (32h) week?</label>
-          <div class="slider-container">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              bind:value={responses.fourDayWeekPercentage}
-              class="slider"
-            />
-            <div class="slider-labels">
-              <span>0% - Never</span>
-              <span>{responses.fourDayWeekPercentage || 0}%</span>
-              <span>100% - Every week</span>
-            </div>
-          </div>
-        </div>
+        <SliderInput
+          label="3. Roughly what % of weeks do you work a four-day (32h) week?"
+          bind:value={responses.fourDayWeekPercentage}
+          min={0}
+          max={100}
+          minLabel="0% - Never"
+          maxLabel="100% - Every week"
+          unit="%"
+        />
 
-        <div class="question">
-          <label>4. If four-day remains optional, how likely are you to choose it?</label>
-          <div class="scale">
-            {#each [1, 2, 3, 4, 5] as value (value)}
-              <label class="scale-item">
-                <input type="radio" name="fourDayLikelihood" {value} bind:group={responses.fourDayLikelihood} />
-                <span>{value}</span>
-              </label>
-            {/each}
-          </div>
-          <div class="scale-labels">
-            <span>1 = Not at all</span>
-            <span>5 = Absolutely</span>
-          </div>
-        </div>
+        <ScaleInput
+          label="4. If four-day remains optional, how likely are you to choose it?"
+          name="fourDayLikelihood"
+          bind:value={responses.fourDayLikelihood}
+          min={1}
+          max={5}
+          minLabel="1 = Not at all"
+          maxLabel="5 = Absolutely"
+        />
       </div>
-    {:else}
+    {:else if currentStep === 4}
+      <div class="step">
+        <h2>Importance & Impact</h2>
+
+        <ScaleInput
+          label="5. How important is a permanent four-day week to you?"
+          name="fourDayImportance"
+          bind:value={responses.fourDayImportance}
+          min={1}
+          max={5}
+          minLabel="1 = Not important"
+          maxLabel="5 = Critical"
+        />
+
+        <ScaleInput
+          label="6. If it ends, how likely are you to look for a new role?"
+          name="newRoleLikelihood"
+          bind:value={responses.newRoleLikelihood}
+          min={1}
+          max={5}
+          minLabel="1 = Very unlikely"
+          maxLabel="5 = Already looking"
+        />
+      </div>
+    {:else if currentStep === 5}
+      <div class="step">
+        <h2>Redundancy Consideration</h2>
+
+        <SliderInput
+          label="7. Right now, how strongly are you considering voluntary redundancy?"
+          bind:value={responses.redundancyConsideration}
+          min={0}
+          max={100}
+          minLabel="0% - Not at all"
+          maxLabel="100% - Already signed up"
+          unit="%"
+        />
+
+        <ScaleInput
+          label="8. How critical is this paycheck to your household?"
+          name="paycheckCriticality"
+          bind:value={responses.paycheckCriticality}
+          min={1}
+          max={5}
+          minLabel="1 = Manageable"
+          maxLabel="5 = Can't do without it"
+        />
+      </div>
+    {:else if currentStep === 6}
+      <div class="step">
+        <h2>Pay-/Hours-Cut Trade-offs</h2>
+
+        <RadioGroup
+          label="9. What % pay-cut would you accept over 12 months to avoid any layoffs?"
+          name="payCut12Months"
+          bind:value={responses.payCut12Months}
+          options={[
+            { value: '0', label: '0%' },
+            { value: '5', label: '5%' },
+            { value: '10', label: '10%' },
+            { value: '15', label: '15%' },
+            { value: '20', label: '20%' },
+            { value: '>20', label: '>20%' }
+          ]}
+        />
+
+        <RadioGroup
+          label="10. If the cut were only 6 months, would your answer change?"
+          name="payCut6Months"
+          bind:value={responses.payCut6Months}
+          options={[
+            { value: '0', label: '0%' },
+            { value: '5', label: '5%' },
+            { value: '10', label: '10%' },
+            { value: '15', label: '15%' },
+            { value: '20', label: '20%' },
+            { value: '>20', label: '>20%' }
+          ]}
+        />
+
+        <RadioGroup
+          label="11. If only 3 months?"
+          name="payCut3Months"
+          bind:value={responses.payCut3Months}
+          options={[
+            { value: '0', label: '0%' },
+            { value: '5', label: '5%' },
+            { value: '10', label: '10%' },
+            { value: '15', label: '15%' },
+            { value: '20', label: '20%' },
+            { value: '>20', label: '>20%' }
+          ]}
+        />
+
+        <CheckboxGroup
+          label="12. Could you reduce hours to preserve a 4-day pattern?"
+          bind:value={responses.hoursReduction}
+          allowNone={true}
+          noneLabel="None of these"
+          options={[
+            { value: '32-30', label: '32h→30h (≈ 6% cut)' },
+            { value: '32-28', label: '32h→28h (≈ 13% cut)' },
+            { value: '32-24', label: '32h→24h (≈ 25% cut)' }
+          ]}
+        />
+      </div>
+    {:else if currentStep === 7}
+      <div class="step">
+        <h2>Well-Being & Trust</h2>
+
+        <ScaleInput
+          label="13. Current stress level about these changes"
+          name="stressLevel"
+          bind:value={responses.stressLevel}
+          min={1}
+          max={5}
+          minLabel="1 = Low"
+          maxLabel="5 = Severe"
+        />
+
+        <ScaleInput
+          label="14. Trust in leadership right now"
+          name="trustInLeadership"
+          bind:value={responses.trustInLeadership}
+          min={1}
+          max={5}
+          minLabel="1 = None"
+          maxLabel="5 = Total"
+        />
+      </div>
+    {:else if currentStep === 8}
+      <div class="step">
+        <h2>Meta & Open Feedback</h2>
+
+        <TextInput
+          label="15. What's missing? What other questions should we ask?"
+          bind:value={responses.missingQuestions}
+          placeholder="Share any questions you think we should have included..."
+          rows={4}
+          maxLength={500}
+        />
+
+        <TextInput
+          label="16. Anything else you want colleagues to know?"
+          bind:value={responses.additionalFeedback}
+          placeholder="Any other thoughts, concerns, or suggestions..."
+          rows={4}
+          maxLength={500}
+        />
+      </div>
+    {:else if currentStep === 9}
       <div class="step">
         <h2>Survey Complete</h2>
         <p>Thank you for participating in our anonymous survey!</p>
@@ -226,76 +371,6 @@ async function handleStepChange() {
 		min-height: 400px;
 	}
 
-	.question {
-		margin-bottom: 2rem;
-	}
-
-	.question label {
-		display: block;
-		font-weight: 600;
-		margin-bottom: 1rem;
-		color: #374151;
-	}
-
-	.options {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.options label {
-		font-weight: normal;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		cursor: pointer;
-	}
-
-	.slider-container {
-		margin: 1rem 0;
-	}
-
-	.slider {
-		width: 100%;
-		height: 6px;
-		background: #e5e7eb;
-		border-radius: 3px;
-		outline: none;
-	}
-
-	.slider-labels {
-		display: flex;
-		justify-content: space-between;
-		margin-top: 0.5rem;
-		font-size: 0.9rem;
-		color: #6b7280;
-	}
-
-	.scale {
-		display: flex;
-		gap: 1rem;
-		justify-content: center;
-		margin: 1rem 0;
-	}
-
-	.scale-item {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		cursor: pointer;
-	}
-
-	.scale-item input {
-		margin-bottom: 0.5rem;
-	}
-
-	.scale-labels {
-		display: flex;
-		justify-content: space-between;
-		font-size: 0.9rem;
-		color: #6b7280;
-		margin-top: 1rem;
-	}
 
 	.navigation {
 		display: flex;
