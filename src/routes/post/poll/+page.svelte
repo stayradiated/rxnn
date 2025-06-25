@@ -1,11 +1,9 @@
 <script lang="ts">
 import { goto } from '$app/navigation'
-import { getTokenFromStorage } from '$lib/token-storage'
 import { onMount } from 'svelte'
 
 type PollType = 'radio' | 'scale'
 
-let token = ''
 let title = $state('')
 let content = $state('')
 let pollType: PollType = $state('radio')
@@ -17,14 +15,6 @@ let scaleMin = $state(1)
 let scaleMax = $state(5)
 let scaleMinLabel = $state('')
 let scaleMaxLabel = $state('')
-
-onMount(() => {
-  token = getTokenFromStorage() || ''
-
-  if (!token) {
-    goto('/login')
-  }
-})
 
 function addOption() {
   radioOptions = [...radioOptions, '']
@@ -80,7 +70,6 @@ const submitPost = async (event: SubmitEvent) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         title: title.trim(),

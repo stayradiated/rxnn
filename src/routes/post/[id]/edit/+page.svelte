@@ -1,6 +1,5 @@
 <script lang="ts">
 import { goto } from '$app/navigation'
-import { getTokenFromStorage } from '$lib/token-storage'
 import { onMount } from 'svelte'
 import type { PageData } from './$types'
 
@@ -10,7 +9,6 @@ type Props = {
 
 const { data }: Props = $props()
 
-let token = $state('')
 let title = $state(data.post.title)
 let content = $state(data.post.content || '')
 let postType = $state(data.post.post_type)
@@ -25,8 +23,6 @@ let scaleMinLabel = $state('')
 let scaleMaxLabel = $state('')
 
 onMount(() => {
-  token = getTokenFromStorage() || ''
-
   // Initialize poll configuration based on post type
   if (postType !== 'text' && data.post.poll_config) {
     const config = data.post.poll_config
@@ -102,7 +98,6 @@ async function submitUpdate(event) {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         title: title.trim(),

@@ -1,23 +1,11 @@
 <script lang="ts">
-import { browser } from '$app/environment'
 import { goto } from '$app/navigation'
-import { getTokenFromStorage } from '$lib/token-storage'
-import { onMount } from 'svelte'
 import { preventDefault } from 'svelte/legacy'
 
-let token = ''
 let title = $state('')
 let content = $state('')
 let isLoading = $state(false)
 let error = $state('')
-
-onMount(() => {
-  token = getTokenFromStorage() || ''
-
-  if (!token) {
-    goto('/login')
-  }
-})
 
 async function submitPost() {
   if (!title.trim()) {
@@ -38,7 +26,6 @@ async function submitPost() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         title: title.trim(),

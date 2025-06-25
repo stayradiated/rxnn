@@ -1,17 +1,8 @@
 <script lang="ts">
-import { browser } from '$app/environment'
 import { goto } from '$app/navigation'
-import { getTokenFromStorage } from '$lib/token-storage'
 import { onMount } from 'svelte'
 
 onMount(() => {
-  const token = getTokenFromStorage() || ''
-
-  if (!token) {
-    goto('/login')
-    return
-  }
-
   // Redirect to feed since we now have separate pages for text and poll creation
   goto('/feed')
 })

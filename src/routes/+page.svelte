@@ -1,20 +1,10 @@
 <script lang="ts">
-import { browser } from '$app/environment'
 import { goto } from '$app/navigation'
-import { getTokenFromStorage } from '$lib/token-storage'
 import { onMount } from 'svelte'
 
 onMount(() => {
-  if (browser) {
-    const token = getTokenFromStorage()
-    if (token) {
-      // User has a token, redirect to feed
-      goto('/feed')
-    } else {
-      // No token, redirect to login
-      goto('/login')
-    }
-  }
+  // Redirect to feed - auth is now handled server-side
+  goto('/feed')
 })
 </script>
 
