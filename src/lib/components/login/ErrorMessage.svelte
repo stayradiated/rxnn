@@ -14,12 +14,12 @@ let { error }: Props = $props()
 
 <style>
   .error-message {
-    background: #fef2f2;
-    border: 1px solid #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--color-error);
     border-radius: 6px;
     padding: 1rem;
     margin-top: 1rem;
-    color: #dc2626;
+    color: var(--color-error);
     text-align: center;
   }
 </style>

@@ -46,12 +46,12 @@ let { token = $bindable(''), isLoading, onLogin, onBack }: Props = $props()
   }
 
   h2 {
-    color: #374151;
+    color: var(--color-text);
     margin-bottom: 1.5rem;
   }
 
   p {
-    color: #6b7280;
+    color: var(--color-text-secondary);
     margin-bottom: 2rem;
     line-height: 1.6;
   }
@@ -64,28 +64,30 @@ let { token = $bindable(''), isLoading, onLogin, onBack }: Props = $props()
   .token-input-group label {
     display: block;
     margin-bottom: 0.5rem;
-    color: #374151;
+    color: var(--color-text);
     font-weight: 500;
   }
 
   .token-input {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     font-size: 0.9rem;
     font-family: monospace;
     box-sizing: border-box;
+    background: var(--color-bg);
+    color: var(--color-text);
   }
 
   .token-input:focus {
     outline: none;
-    border-color: #2563eb;
+    border-color: var(--color-primary);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
   }
 
   .btn-primary {
-    background: #2563eb;
+    background: var(--color-primary);
     color: white;
     border: none;
     border-radius: 8px;
@@ -101,12 +103,12 @@ let { token = $bindable(''), isLoading, onLogin, onBack }: Props = $props()
   }
 
   .btn-primary:hover:not(:disabled) {
-    background: #1d4ed8;
+    background: var(--color-primary-hover);
     transform: translateY(-1px);
   }
 
   .btn-primary:disabled {
-    background: #9ca3af;
+    background: var(--color-text-muted);
     cursor: not-allowed;
     transform: none;
   }
@@ -114,13 +116,13 @@ let { token = $bindable(''), isLoading, onLogin, onBack }: Props = $props()
   .btn-link {
     background: none;
     border: none;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     cursor: pointer;
     margin-top: 1rem;
     font-size: 0.9rem;
   }
 
   .btn-link:hover:not(:disabled) {
-    color: #374151;
+    color: var(--color-text);
   }
 </style>

@@ -165,16 +165,17 @@ async function loginWithToken() {
     align-items: center;
     justify-content: center;
     padding: 2rem;
-    background: linear-gradient(135deg, #253382 0%, #253382 100%);
+    background: var(--color-bg);
   }
 
   .login-card {
-    background: white;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 3rem;
     max-width: 500px;
     width: 100%;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 30px var(--color-shadow);
   }
 
   @media (max-width: 768px) {

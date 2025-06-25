@@ -185,16 +185,16 @@ async function submitComment() {
 
 <style>
   .post-card {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px var(--color-shadow);
     transition: box-shadow 0.2s;
   }
 
   .post-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px var(--color-shadow);
   }
 
   .post-header {
@@ -214,8 +214,8 @@ async function submitComment() {
   }
 
   .post-type {
-    background: #eff6ff;
-    color: #2563eb;
+    background: var(--color-surface-alt);
+    color: var(--color-primary);
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
     font-size: 0.8rem;
@@ -223,7 +223,7 @@ async function submitComment() {
   }
 
   .post-author {
-    color: #6b7280;
+    color: var(--color-text-secondary);
     font-size: 0.9rem;
     font-weight: 500;
     display: flex;
@@ -233,18 +233,18 @@ async function submitComment() {
 
   .post-author-avatar {
     font-size: 1rem;
-    background: #f3f4f6;
+    background: var(--color-surface-alt);
     border-radius: 50%;
     width: 1.5rem;
     height: 1.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--color-border);
   }
 
   .post-time {
-    color: #9ca3af;
+    color: var(--color-text-muted);
     font-size: 0.8rem;
   }
 
@@ -261,7 +261,7 @@ async function submitComment() {
   }
 
   .stat {
-    color: #6b7280;
+    color: var(--color-text-secondary);
     font-size: 0.8rem;
     display: flex;
     align-items: center;
@@ -269,7 +269,7 @@ async function submitComment() {
   }
 
   .btn-edit-post {
-    background: #f59e0b;
+    background: var(--color-warning);
     color: white;
     border: none;
     border-radius: 6px;
@@ -284,12 +284,13 @@ async function submitComment() {
   }
 
   .btn-edit-post:hover {
-    background: #d97706;
+    background: var(--color-warning);
+    filter: brightness(0.9);
     transform: translateY(-1px);
   }
 
   .post-title {
-    color: #111827;
+    color: var(--color-text);
     font-size: 1.3rem;
     font-weight: 600;
     margin-bottom: 0.75rem;
@@ -297,7 +298,7 @@ async function submitComment() {
   }
 
   .post-content {
-    color: #4b5563;
+    color: var(--color-text-secondary);
     margin-bottom: 1rem;
     line-height: 1.6;
   }

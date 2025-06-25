@@ -50,12 +50,12 @@ let { username, isLoading, onGenerateNew, onConfirm, onBack }: Props = $props()
   }
 
   h2 {
-    color: #374151;
+    color: var(--color-text);
     margin-bottom: 1.5rem;
   }
 
   p {
-    color: #6b7280;
+    color: var(--color-text-secondary);
     margin-bottom: 2rem;
     line-height: 1.6;
   }
@@ -65,8 +65,8 @@ let { username, isLoading, onGenerateNew, onConfirm, onBack }: Props = $props()
   }
 
   .username-card {
-    background: #f8fafc;
-    border: 2px solid #2563eb;
+    background: var(--color-surface);
+    border: 2px solid var(--color-primary);
     border-radius: 12px;
     padding: 2rem;
     margin: 1rem 0;
@@ -75,7 +75,7 @@ let { username, isLoading, onGenerateNew, onConfirm, onBack }: Props = $props()
   .username-text {
     font-size: 1.8rem;
     font-weight: 700;
-    color: #2563eb;
+    color: var(--color-primary);
     font-family: monospace;
   }
 
@@ -87,7 +87,7 @@ let { username, isLoading, onGenerateNew, onConfirm, onBack }: Props = $props()
   }
 
   .btn-primary {
-    background: #2563eb;
+    background: var(--color-primary);
     color: white;
     border: none;
     border-radius: 6px;
@@ -99,20 +99,20 @@ let { username, isLoading, onGenerateNew, onConfirm, onBack }: Props = $props()
   }
 
   .btn-primary:hover:not(:disabled) {
-    background: #1d4ed8;
+    background: var(--color-primary-hover);
     transform: translateY(-1px);
   }
 
   .btn-primary:disabled {
-    background: #9ca3af;
+    background: var(--color-text-muted);
     cursor: not-allowed;
     transform: none;
   }
 
   .btn-secondary {
-    background: #f3f4f6;
-    color: #374151;
-    border: 1px solid #d1d5db;
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     padding: 0.75rem 1.5rem;
     cursor: pointer;
@@ -122,20 +122,20 @@ let { username, isLoading, onGenerateNew, onConfirm, onBack }: Props = $props()
   }
 
   .btn-secondary:hover:not(:disabled) {
-    background: #e5e7eb;
+    background: var(--color-border);
     transform: translateY(-1px);
   }
 
   .btn-link {
     background: none;
     border: none;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     cursor: pointer;
     margin-top: 1rem;
     font-size: 0.9rem;
   }
 
   .btn-link:hover:not(:disabled) {
-    color: #374151;
+    color: var(--color-text);
   }
 </style>

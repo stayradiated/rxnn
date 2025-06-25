@@ -54,11 +54,11 @@ function createPoll() {
     align-items: center;
     margin-bottom: 2rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--color-border);
   }
 
   .header-content h1 {
-    color: #2563eb;
+    color: var(--color-primary);
     margin: 0;
     font-size: 1.8rem;
   }
@@ -78,18 +78,18 @@ function createPoll() {
 
   .user-avatar {
     font-size: 1.2rem;
-    background: #f3f4f6;
+    background: var(--color-surface-alt);
     border-radius: 50%;
     width: 2rem;
     height: 2rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid #e5e7eb;
+    border: 2px solid var(--color-border);
   }
 
   .username {
-    color: #6b7280;
+    color: var(--color-text-secondary);
     font-size: 0.9rem;
     font-weight: 500;
   }
@@ -101,7 +101,7 @@ function createPoll() {
   }
 
   .btn-profile {
-    background: #3b82f6;
+    background: var(--color-primary);
     color: white;
     border: none;
     border-radius: 4px;
@@ -114,13 +114,13 @@ function createPoll() {
   }
 
   .btn-profile:hover {
-    background: #2563eb;
+    background: var(--color-primary-hover);
   }
 
   .btn-logout {
-    background: #f3f4f6;
-    color: #6b7280;
-    border: 1px solid #d1d5db;
+    background: var(--color-surface-alt);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
     border-radius: 4px;
     padding: 0.25rem 0.75rem;
     cursor: pointer;
@@ -129,8 +129,8 @@ function createPoll() {
   }
 
   .btn-logout:hover {
-    background: #e5e7eb;
-    color: #374151;
+    background: var(--color-border);
+    color: var(--color-text);
   }
 
   .header-actions {
@@ -139,7 +139,7 @@ function createPoll() {
   }
 
   .btn-primary {
-    background: #2563eb;
+    background: var(--color-primary);
     color: white;
     border: none;
     border-radius: 6px;
@@ -154,7 +154,7 @@ function createPoll() {
   }
 
   .btn-primary:hover {
-    background: #1d4ed8;
+    background: var(--color-primary-hover);
   }
 
   @media (max-width: 768px) {

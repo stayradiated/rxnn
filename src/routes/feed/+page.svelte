@@ -181,18 +181,18 @@ async function performLogout() {
   .empty-state {
     text-align: center;
     padding: 4rem 2rem;
-    background: #f9fafb;
+    background: var(--color-surface);
     border-radius: 12px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--color-border);
   }
 
   .empty-state h2 {
-    color: #374151;
+    color: var(--color-text);
     margin-bottom: 1rem;
   }
 
   .empty-state p {
-    color: #6b7280;
+    color: var(--color-text-secondary);
     margin-bottom: 2rem;
   }
 
@@ -204,7 +204,7 @@ async function performLogout() {
   }
 
   .btn-primary {
-    background: #2563eb;
+    background: var(--color-primary);
     color: white;
     border: none;
     border-radius: 6px;
@@ -219,7 +219,7 @@ async function performLogout() {
   }
 
   .btn-primary:hover {
-    background: #1d4ed8;
+    background: var(--color-primary-hover);
   }
 
   .btn-large {

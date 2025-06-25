@@ -34,7 +34,7 @@ let { isLoading, onCreateNew, onUseExisting }: Props = $props()
   }
 
   h2 {
-    color: #374151;
+    color: var(--color-text);
     margin-bottom: 1.5rem;
     text-align: center;
   }
@@ -51,29 +51,29 @@ let { isLoading, onCreateNew, onUseExisting }: Props = $props()
   }
 
   .btn-primary {
-    background: #2563eb;
+    background: var(--color-primary);
     color: white;
   }
 
   .btn-primary:hover:not(:disabled) {
-    background: #1d4ed8;
+    background: var(--color-primary-hover);
     transform: translateY(-1px);
   }
 
   .btn-primary:disabled {
-    background: #9ca3af;
+    background: var(--color-text-muted);
     cursor: not-allowed;
     transform: none;
   }
 
   .btn-secondary {
-    background: #f3f4f6;
-    color: #374151;
-    border: 1px solid #d1d5db;
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
   }
 
   .btn-secondary:hover:not(:disabled) {
-    background: #e5e7eb;
+    background: var(--color-border);
     transform: translateY(-1px);
   }
 </style>

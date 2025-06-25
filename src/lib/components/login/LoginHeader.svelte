@@ -13,13 +13,13 @@
   }
 
   h1 {
-    color: #2563eb;
+    color: var(--color-primary);
     margin-bottom: 0.5rem;
     font-size: 2rem;
   }
 
   .subtitle {
-    color: #6b7280;
+    color: var(--color-text-secondary);
     margin-bottom: 0;
     font-size: 1.1rem;
   }

@@ -37,7 +37,7 @@ onMount(() => {
 	}
 
 	h1 {
-		color: #2563eb;
+		color: var(--color-primary);
 		margin-bottom: 2rem;
 	}
 </style>
