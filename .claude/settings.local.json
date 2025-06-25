@@ -9,7 +9,8 @@
       "Bash(mkdir:*)",
       "WebFetch(domain:lucia-next.pages.dev)",
       "Bash(rm:*)",
-      "Bash(rip:*)"
+      "Bash(rip:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

@@ -15,7 +15,7 @@ let { isLoading, onCreateNew, onUseExisting }: Props = $props()
     onclick={onCreateNew}
     class="btn-primary btn-large"
     disabled={isLoading}>
-    🆕 Create New Identity
+    🦊 Create Identity
   </button>
 
   <button

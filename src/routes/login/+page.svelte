@@ -1,6 +1,5 @@
 <script lang="ts">
 import { goto } from '$app/navigation'
-import { page } from '$app/stores'
 import ErrorMessage from '$lib/components/login/ErrorMessage.svelte'
 import ExistingUserLogin from '$lib/components/login/ExistingUserLogin.svelte'
 
@@ -9,7 +8,6 @@ import ModeSelection from '$lib/components/login/ModeSelection.svelte'
 import TokenDisplay from '$lib/components/login/TokenDisplay.svelte'
 import UsernameSelection from '$lib/components/login/UsernameSelection.svelte'
 import { generateUsername } from '$lib/username-generator'
-import { onMount } from 'svelte'
 
 let mode: 'choose' | 'new' | 'existing' = $state('choose')
 let existingToken = $state('')
@@ -21,13 +19,6 @@ let registrationStep: 'username-selection' | 'token-display' =
   $state('username-selection')
 let selectedUsername = $state('')
 let generatedToken = $state('')
-
-onMount(() => {
-  // Check if user is already authenticated via server-side session
-  if ($page.data?.user) {
-    goto('/feed')
-  }
-})
 
 function startUsernameSelection() {
   mode = 'new'

@@ -314,8 +314,8 @@ export function getPollAggregates(postId: number) {
     // For radio polls, count votes for each option
     const optionCounts: { [key: string]: number } = {}
 
-    pollConfig.options.forEach((option: string) => {
-      optionCounts[option] = 0
+    pollConfig.options.forEach((option: any) => {
+      optionCounts[option.id] = 0
     })
 
     responseData.forEach((data: any) => {
@@ -330,18 +330,21 @@ export function getPollAggregates(postId: number) {
     return {
       totalResponses,
       type: 'radio',
-      options: Object.entries(optionCounts).map(([option, count]) => ({
-        option,
-        count,
+      options: pollConfig.options.map((option: any) => ({
+        option_id: option.id,
+        label: option.label,
+        count: optionCounts[option.id] || 0,
         percentage:
-          totalResponses > 0 ? Math.round((count / totalResponses) * 100) : 0,
+          totalResponses > 0
+            ? Math.round((optionCounts[option.id] / totalResponses) * 100)
+            : 0,
       })),
     }
   }
   if (post.post_type === 'scale') {
     // For scale polls, calculate statistics
     const values = responseData
-      .map((data: any) => data.value)
+      .map((data: any) => data.scaleValue)
       .filter((val: any) => typeof val === 'number')
 
     if (values.length === 0) {
@@ -358,17 +361,16 @@ export function getPollAggregates(postId: number) {
     const average =
       values.reduce((sum: number, val: number) => sum + val, 0) / values.length
 
-    // Create distribution buckets
-    const buckets = 5 // Number of buckets for distribution
-    const bucketSize = (pollConfig.max - pollConfig.min) / buckets
-    const distribution = Array(buckets).fill(0)
+    // Count occurrences of each value
+    const valueCounts: { [key: number]: number } = {}
+    for (let i = pollConfig.min; i <= pollConfig.max; i++) {
+      valueCounts[i] = 0
+    }
 
     values.forEach((value: number) => {
-      const bucketIndex = Math.min(
-        Math.floor((value - pollConfig.min) / bucketSize),
-        buckets - 1,
-      )
-      distribution[bucketIndex]++
+      if (valueCounts[value] !== undefined) {
+        valueCounts[value]++
+      }
     })
 
     return {
@@ -379,11 +381,11 @@ export function getPollAggregates(postId: number) {
       max: Math.max(...values),
       configMin: pollConfig.min,
       configMax: pollConfig.max,
-      distribution: distribution.map((count: number, index: number) => ({
-        rangeStart: pollConfig.min + index * bucketSize,
-        rangeEnd: pollConfig.min + (index + 1) * bucketSize,
+      distribution: Object.entries(valueCounts).map(([value, count]) => ({
+        value: Number.parseInt(value),
         count,
-        percentage: Math.round((count / totalResponses) * 100),
+        percentage:
+          totalResponses > 0 ? Math.round((count / totalResponses) * 100) : 0,
       })),
     }
   }
