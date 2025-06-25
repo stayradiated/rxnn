@@ -3,15 +3,22 @@ export let label: string
 export let name: string
 export let options: Array<{ value: string; label: string }>
 export let value: string | undefined = undefined
+export let allowPreferNotToAnswer = true
 
 $: value = value || undefined
+$: allOptions = allowPreferNotToAnswer
+  ? [
+      ...options,
+      { value: 'prefer-not-to-answer', label: 'Prefer not to answer' },
+    ]
+  : options
 </script>
 
 <div class="question">
   <label class="question-label">{label}</label>
   <div class="options">
-    {#each options as option (option.value)}
-      <label class="option">
+    {#each allOptions as option, index (option.value)}
+      <label class="option" class:prefer-not-to-answer={option.value === 'prefer-not-to-answer'}>
         <input
           type="radio"
           {name}
@@ -20,6 +27,9 @@ $: value = value || undefined
         />
         {option.label}
       </label>
+      {#if allowPreferNotToAnswer && index === options.length - 1}
+        <div class="separator"></div>
+      {/if}
     {/each}
   </div>
 </div>
@@ -55,5 +65,16 @@ $: value = value || undefined
     border-radius: 4px;
     padding: 0.25rem;
     margin: -0.25rem;
+  }
+
+  .separator {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 0.5rem 0;
+  }
+
+  .prefer-not-to-answer {
+    color: #6b7280;
+    font-style: italic;
   }
 </style>

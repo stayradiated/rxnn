@@ -1,11 +1,12 @@
 <script lang="ts">
 export let label: string
 export let name: string
-export let value: number | undefined = undefined
+export let value: number | string | undefined = undefined
 export let min = 1
 export let max = 5
 export let minLabel = ''
 export let maxLabel = ''
+export let allowPreferNotToAnswer = true
 
 $: options = Array.from({ length: max - min + 1 }, (_, i) => min + i)
 </script>
@@ -29,6 +30,20 @@ $: options = Array.from({ length: max - min + 1 }, (_, i) => min + i)
     <div class="scale-labels">
       <span>{minLabel}</span>
       <span>{maxLabel}</span>
+    </div>
+  {/if}
+  {#if allowPreferNotToAnswer}
+    <div class="prefer-not-to-answer-section">
+      <div class="separator"></div>
+      <label class="scale-item prefer-not-to-answer">
+        <input
+          type="radio"
+          {name}
+          value="prefer-not-to-answer"
+          bind:group={value}
+        />
+        <span class="prefer-text">Prefer not to answer</span>
+      </label>
     </div>
   {/if}
 </div>
@@ -82,5 +97,29 @@ $: options = Array.from({ length: max - min + 1 }, (_, i) => min + i)
     font-size: 0.9rem;
     color: #6b7280;
     margin-top: 1rem;
+  }
+
+  .prefer-not-to-answer-section {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .separator {
+    width: 100%;
+    height: 1px;
+    background: #e5e7eb;
+    margin-bottom: 1rem;
+  }
+
+  .prefer-not-to-answer {
+    color: #6b7280;
+    font-style: italic;
+  }
+
+  .prefer-text {
+    font-weight: normal;
+    color: #6b7280;
   }
 </style>

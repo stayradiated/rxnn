@@ -144,8 +144,7 @@ function jumpToStep(step: number) {
               { value: 'customer-success', label: 'Customer Success' },
               { value: 'operations', label: 'Operations' },
               { value: 'leadership', label: 'Leadership' },
-              { value: 'board', label: 'Board' },
-              { value: 'prefer-not-to-say', label: 'Prefer not to say' }
+              { value: 'board', label: 'Board' }
             ]}
           />
 
@@ -157,8 +156,7 @@ function jumpToStep(step: number) {
               { value: '0-1', label: '0–1 year' },
               { value: '1-2', label: '1–2 years' },
               { value: '2-3', label: '2–3 years' },
-              { value: '3+', label: '3+ years' },
-              { value: 'prefer-not-to-say', label: 'Prefer not to say' }
+              { value: '3+', label: '3+ years' }
             ]}
           />
         </div>

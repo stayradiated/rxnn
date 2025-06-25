@@ -1,11 +1,38 @@
 <script lang="ts">
 export let label: string
-export let value = 0
+export let value: number | string = 0
 export let min = 0
 export let max = 100
 export let minLabel = ''
 export let maxLabel = ''
 export let unit = '%'
+export let allowPreferNotToAnswer = true
+
+let isPreferNotToAnswer = false
+
+$: {
+  if (value === 'prefer-not-to-answer') {
+    isPreferNotToAnswer = true
+  } else {
+    isPreferNotToAnswer = false
+  }
+}
+
+function handlePreferNotToAnswer(checked: boolean) {
+  if (checked) {
+    value = 'prefer-not-to-answer'
+    isPreferNotToAnswer = true
+  } else {
+    value = min
+    isPreferNotToAnswer = false
+  }
+}
+
+function handleSliderChange(event: Event) {
+  if (!isPreferNotToAnswer) {
+    value = Number((event.target as HTMLInputElement).value)
+  }
+}
 </script>
 
 <div class="question">
@@ -15,15 +42,32 @@ export let unit = '%'
       type="range"
       {min}
       {max}
-      bind:value
+      value={isPreferNotToAnswer ? min : value}
+      disabled={isPreferNotToAnswer}
       class="slider"
+      class:disabled={isPreferNotToAnswer}
+      on:input={handleSliderChange}
     />
     <div class="slider-labels">
       <span>{minLabel || `${min}${unit}`}</span>
-      <span class="current-value">{value}{unit}</span>
+      <span class="current-value">
+        {isPreferNotToAnswer ? 'Prefer not to answer' : `${value}${unit}`}
+      </span>
       <span>{maxLabel || `${max}${unit}`}</span>
     </div>
   </div>
+  {#if allowPreferNotToAnswer}
+    <div class="prefer-not-to-answer-section">
+      <label class="prefer-checkbox">
+        <input
+          type="checkbox"
+          checked={isPreferNotToAnswer}
+          on:change={(e) => handlePreferNotToAnswer(e.currentTarget.checked)}
+        />
+        <span class="prefer-text">Prefer not to answer</span>
+      </label>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -81,5 +125,29 @@ export let unit = '%'
   .current-value {
     font-weight: 600;
     color: #2563eb;
+  }
+
+  .slider.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .prefer-not-to-answer-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .prefer-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    color: #6b7280;
+    font-style: italic;
+  }
+
+  .prefer-text {
+    font-size: 0.9rem;
   }
 </style>
