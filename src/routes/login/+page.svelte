@@ -6,13 +6,19 @@ import {
   getTokenFromStorage,
   saveTokenToStorage,
 } from '$lib/token-storage'
+import { generateUsername } from '$lib/username-generator'
 import { onMount } from 'svelte'
 
 let mode: 'choose' | 'new' | 'existing' = 'choose'
 let existingToken = ''
 let isLoading = false
 let error = ''
-let generatedUsername = ''
+
+// Multi-step registration flow
+let registrationStep: 'username-selection' | 'token-display' =
+  'username-selection'
+let selectedUsername = ''
+let generatedToken = ''
 
 onMount(() => {
   // Check if user already has a token
@@ -46,7 +52,18 @@ async function verifyAndRedirect(token: string) {
   }
 }
 
-async function createNewUser() {
+function startUsernameSelection() {
+  mode = 'new'
+  registrationStep = 'username-selection'
+  generateNewUsername()
+}
+
+function generateNewUsername() {
+  selectedUsername = generateUsername()
+  error = ''
+}
+
+async function confirmUsername() {
   isLoading = true
   error = ''
 
@@ -58,13 +75,8 @@ async function createNewUser() {
 
     if (response.ok) {
       const data = await response.json()
-      saveTokenToStorage(data.token)
-      generatedUsername = data.username
-
-      // Show username briefly then redirect
-      setTimeout(() => {
-        goto('/feed')
-      }, 2000)
+      generatedToken = data.token
+      registrationStep = 'token-display'
     } else {
       const data = await response.json()
       error = data.error || 'Failed to create account'
@@ -74,6 +86,19 @@ async function createNewUser() {
   } finally {
     isLoading = false
   }
+}
+
+function completeRegistration() {
+  saveTokenToStorage(generatedToken)
+  goto('/feed')
+}
+
+function backToModeSelection() {
+  mode = 'choose'
+  registrationStep = 'username-selection'
+  selectedUsername = ''
+  generatedToken = ''
+  error = ''
 }
 
 async function loginWithToken() {
@@ -124,7 +149,7 @@ async function loginWithToken() {
         <h2>How would you like to proceed?</h2>
 
         <button
-          on:click={() => mode = 'new'}
+          on:click={startUsernameSelection}
           class="btn-primary btn-large"
           disabled={isLoading}>
           🆕 Create New Identity
@@ -139,31 +164,67 @@ async function loginWithToken() {
       </div>
 
     {:else if mode === 'new'}
-      <div class="new-user-flow">
-        <h2>Create Anonymous Identity</h2>
-        <p>We'll generate a fun username for you. No personal information required!</p>
+      {#if registrationStep === 'username-selection'}
+        <div class="username-selection">
+          <h2>Your Anonymous Identity</h2>
+          <p>Here's your randomly generated username. You can regenerate it until you find one you like!</p>
 
-        {#if generatedUsername}
-          <div class="success-message">
-            <h3>🎉 Welcome, {generatedUsername}!</h3>
-            <p>Redirecting to your feed...</p>
+          <div class="username-display">
+            <div class="username-card">
+              <span class="username-text">@{selectedUsername}</span>
+            </div>
           </div>
-        {:else}
-          <button
-            on:click={createNewUser}
-            class="btn-primary btn-large"
-            disabled={isLoading}>
-            {isLoading ? 'Creating...' : 'Generate My Identity'}
-          </button>
-        {/if}
 
-        <button
-          on:click={() => mode = 'choose'}
-          class="btn-link"
-          disabled={isLoading}>
-          ← Back
-        </button>
-      </div>
+          <div class="username-actions">
+            <button
+              on:click={generateNewUsername}
+              class="btn-secondary"
+              disabled={isLoading}>
+              🎲 Try Another Name
+            </button>
+
+            <button
+              on:click={confirmUsername}
+              class="btn-primary"
+              disabled={isLoading}>
+              {isLoading ? 'Creating Account...' : '✓ I Like This Name'}
+            </button>
+          </div>
+
+          <button
+            on:click={backToModeSelection}
+            class="btn-link"
+            disabled={isLoading}>
+            ← Back
+          </button>
+        </div>
+
+      {:else if registrationStep === 'token-display'}
+        <div class="token-display">
+          <h2>🎉 Welcome, @{selectedUsername}!</h2>
+          <p>Your account has been created. Here's your secret token:</p>
+
+          <div class="important-notice">
+            <h3>⚠️ Important - Save This Token!</h3>
+            <p>This is your only way to access your account from other devices. Copy it somewhere safe!</p>
+          </div>
+
+          <div class="token-card">
+            <code class="token-text">{generatedToken}</code>
+            <button
+              on:click={() => navigator.clipboard.writeText(generatedToken)}
+              class="btn-copy">
+              📋 Copy
+            </button>
+          </div>
+
+          <button
+            on:click={completeRegistration}
+            class="btn-primary btn-large">
+            Continue to Platform
+          </button>
+        </div>
+      {/if}
 
     {:else if mode === 'existing'}
       <div class="existing-user-flow">
@@ -213,7 +274,7 @@ async function loginWithToken() {
     align-items: center;
     justify-content: center;
     padding: 2rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #253382 0%, #253382 100%);
   }
 
   .login-card {
@@ -343,6 +404,88 @@ async function loginWithToken() {
   .success-message p {
     color: #15803d;
     margin: 0;
+  }
+
+  .username-display {
+    margin: 2rem 0;
+  }
+
+  .username-card {
+    background: #f8fafc;
+    border: 2px solid #2563eb;
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 1rem 0;
+  }
+
+  .username-text {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #2563eb;
+    font-family: monospace;
+  }
+
+  .username-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin: 1.5rem 0;
+  }
+
+  .token-card {
+    background: #f9fafb;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    word-break: break-all;
+  }
+
+  .token-text {
+    flex: 1;
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: #374151;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+
+  .btn-copy {
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .btn-copy:hover {
+    background: #059669;
+  }
+
+  .important-notice {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    text-align: left;
+  }
+
+  .important-notice h3 {
+    margin: 0 0 0.5rem 0;
+    color: #92400e;
+  }
+
+  .important-notice p {
+    margin: 0;
+    color: #92400e;
   }
 
   .error-message {
