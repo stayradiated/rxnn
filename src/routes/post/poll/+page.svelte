@@ -1,9 +1,7 @@
 <script lang="ts">
-import { browser } from '$app/environment'
 import { goto } from '$app/navigation'
 import { getTokenFromStorage } from '$lib/token-storage'
 import { onMount } from 'svelte'
-import { preventDefault } from 'svelte/legacy'
 
 type PollType = 'radio' | 'scale'
 
@@ -40,7 +38,9 @@ function updateOption(index: number, value: string) {
   radioOptions[index] = value
 }
 
-async function submitPost() {
+const submitPost = async (event: SubmitEvent) => {
+  event.preventDefault()
+
   if (!title.trim()) {
     error = 'Title is required'
     return
@@ -91,11 +91,10 @@ async function submitPost() {
     })
 
     if (response.ok) {
-      const data = await response.json()
+      await response.json()
       goto('/feed')
     } else {
-      const data = await response.json()
-      error = data.error || 'Failed to create poll'
+      error = 'Failed to create poll'
     }
   } catch (err) {
     error = 'Network error. Please try again.'
@@ -113,7 +112,7 @@ async function submitPost() {
   <div class="composer-card">
     <h1>📊 Create Poll</h1>
 
-    <form onsubmit={preventDefault(submitPost)}>
+    <form onsubmit={submitPost}>
       <div class="form-group">
         <label>Poll Type:</label>
         <div class="poll-type-grid">
@@ -164,7 +163,7 @@ async function submitPost() {
             <div class="option-input">
               <input
                 type="text"
-                bind:value={option}
+                bind:value={radioOptions[index]}
                 oninput={(e) => updateOption(index, e.currentTarget.value)}
                 placeholder="Option {index + 1}"
                 disabled={isLoading}

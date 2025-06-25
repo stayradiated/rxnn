@@ -1,6 +1,8 @@
 <script lang="ts">
 import { browser } from '$app/environment'
 import { goto } from '$app/navigation'
+import EmojiPicker from '$lib/components/EmojiPicker.svelte'
+import { generateRandomEmoji } from '$lib/username-generator'
 import { preventDefault } from 'svelte/legacy'
 import type { PageData } from './$types'
 
@@ -15,15 +17,10 @@ let avatar = $state(data.user.avatar)
 let isSubmitting = $state(false)
 let message = $state('')
 let messageType = $state('') // 'success' or 'error'
+let showEmojiPicker = $state(false)
 
 async function updateProfile() {
   if (!browser) return
-
-  const token = localStorage.getItem('auth_token')
-  if (!token) {
-    goto('/')
-    return
-  }
 
   // Validate inputs
   if (!username.trim()) {
@@ -40,7 +37,6 @@ async function updateProfile() {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         username: username.trim(),
@@ -48,17 +44,17 @@ async function updateProfile() {
       }),
     })
 
-    const data = await response.json()
+    const responseData = await response.json()
 
     if (response.ok) {
       message = 'Profile updated successfully!'
       messageType = 'success'
 
       // Update the data to reflect changes
-      username = data.user.username
-      avatar = data.user.avatar
+      username = responseData.user.username
+      avatar = responseData.user.avatar
     } else {
-      message = data.error || 'Failed to update profile'
+      message = responseData.error || 'Failed to update profile'
       messageType = 'error'
     }
   } catch (error) {
@@ -68,6 +64,23 @@ async function updateProfile() {
   } finally {
     isSubmitting = false
   }
+}
+
+function generateRandomAvatarEmoji() {
+  avatar = generateRandomEmoji()
+}
+
+function openEmojiPicker() {
+  showEmojiPicker = true
+}
+
+function closeEmojiPicker() {
+  showEmojiPicker = false
+}
+
+function selectEmoji(emoji: { native: string }) {
+  avatar = emoji.native
+  closeEmojiPicker()
 }
 
 function goBack() {
@@ -119,14 +132,33 @@ function goBack() {
 
         <div class="form-group">
           <label for="avatar">Avatar Emoji</label>
-          <input
-            type="text"
-            id="avatar"
-            bind:value={avatar}
-            placeholder="😊"
-            maxlength="10"
-            disabled={isSubmitting}
-          />
+          <div class="avatar-input-container">
+            <input
+              type="text"
+              id="avatar"
+              bind:value={avatar}
+              placeholder="😊"
+              maxlength="10"
+              disabled={isSubmitting}
+              class="avatar-input"
+            />
+            <button
+              type="button"
+              onclick={openEmojiPicker}
+              class="btn-emoji-picker"
+              disabled={isSubmitting}
+              title="Pick an emoji">
+              😀
+            </button>
+            <button
+              type="button"
+              onclick={generateRandomAvatarEmoji}
+              class="btn-random-emoji"
+              disabled={isSubmitting}
+              title="Generate random emoji">
+              🎲
+            </button>
+          </div>
           <small class="help-text">
             Choose an emoji or short text (max 10 characters) to represent you.
           </small>
@@ -150,6 +182,12 @@ function goBack() {
     </div>
   </div>
 </div>
+
+{#if showEmojiPicker}
+  <div class="emoji-picker-overlay">
+    <EmojiPicker onclose={closeEmojiPicker} onselect={selectEmoji} />
+  </div>
+{/if}
 
 <style>
   .profile-page {
@@ -314,6 +352,77 @@ function goBack() {
     box-shadow: none;
   }
 
+  .avatar-input-container {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .avatar-input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s;
+    box-sizing: border-box;
+  }
+
+  .avatar-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .avatar-input:disabled {
+    background: #f9fafb;
+    color: #6b7280;
+    cursor: not-allowed;
+  }
+
+  .btn-emoji-picker,
+  .btn-random-emoji {
+    background: #f3f4f6;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    padding: 0.75rem;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+    min-width: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-emoji-picker:hover:not(:disabled),
+  .btn-random-emoji:hover:not(:disabled) {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+  }
+
+  .btn-emoji-picker:disabled,
+  .btn-random-emoji:disabled {
+    background: #f9fafb;
+    color: #6b7280;
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .emoji-picker-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+  }
+
   @media (max-width: 768px) {
     .profile-page {
       padding: 1rem 0.5rem;
@@ -341,6 +450,17 @@ function goBack() {
     }
 
     .btn-primary {
+      width: 100%;
+    }
+
+    .avatar-input-container {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .btn-emoji-picker,
+    .btn-random-emoji {
+      min-width: auto;
       width: 100%;
     }
   }
