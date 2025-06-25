@@ -7,6 +7,8 @@ import RadioGroup from '$lib/components/RadioGroup.svelte'
 import ScaleInput from '$lib/components/ScaleInput.svelte'
 import SliderInput from '$lib/components/SliderInput.svelte'
 import TextInput from '$lib/components/TextInput.svelte'
+import { saveTokenToStorage } from '$lib/token-storage'
+import { onMount } from 'svelte'
 import type { PageData } from './$types'
 
 export let data: PageData
@@ -14,6 +16,13 @@ export let data: PageData
 let responses = data.responses || {}
 let currentStep = 1
 const totalSteps = 9
+
+onMount(() => {
+  // Save token to localStorage when survey loads
+  if (data.token) {
+    saveTokenToStorage(data.token)
+  }
+})
 
 async function nextStep() {
   if (currentStep < totalSteps) {
@@ -95,8 +104,13 @@ async function handleStepChange() {
         <h2>Survey Introduction</h2>
         <p>This survey is anonymous and will stay open indefinitely.</p>
         <p>Responses (but not your identity) will be displayed live on a shared dashboard so everyone can see aggregate results as they come in.</p>
-        <p><strong>Your unique URL:</strong> <code>{page.url.href}</code></p>
-        <p class="bookmark-notice">📌 Bookmark this page to return and update your responses anytime!</p>
+
+        <div class="url-info">
+          <p><strong>Your unique URL:</strong></p>
+          <code class="survey-url">{page.url.href}</code>
+          <p class="bookmark-notice">📌 <strong>Bookmark this page</strong> to return and update your responses anytime!</p>
+          <p class="storage-notice">💾 Your survey token is also saved locally on this device for easy access.</p>
+        </div>
       </div>
     {:else if currentStep === 2}
       <div class="step">
@@ -429,11 +443,34 @@ async function handleStepChange() {
 		margin-top: 2rem;
 	}
 
-	code {
+	.url-info {
+		background: #f0f9ff;
+		border: 1px solid #0ea5e9;
+		border-radius: 8px;
+		padding: 1.5rem;
+		margin: 1.5rem 0;
+	}
+
+	.survey-url {
+		display: block;
 		background: #f3f4f6;
-		padding: 0.25rem 0.5rem;
+		padding: 0.75rem;
 		border-radius: 4px;
 		font-family: monospace;
 		word-break: break-all;
+		margin: 0.5rem 0 1rem 0;
+		border: 1px solid #d1d5db;
+	}
+
+	.bookmark-notice {
+		color: #0f766e;
+		font-weight: 500;
+		margin: 0.5rem 0;
+	}
+
+	.storage-notice {
+		color: #0f766e;
+		font-size: 0.9rem;
+		margin: 0.5rem 0 0 0;
 	}
 </style>
