@@ -12,7 +12,7 @@ let {
   show = false,
   token = '',
   tokenConfirmation = $bindable(''),
-  logoutError = '',
+  logoutError = $bindable(''),
   onCancel,
   onConfirm,
 }: Props = $props()

@@ -81,6 +81,15 @@ function createTables() {
     )
   `)
 
+  // Sessions table for Lucia auth
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS session (
+      id TEXT NOT NULL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      expires_at INTEGER NOT NULL
+    )
+  `)
+
   // Create indexes for better performance
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_users_token ON users (token);
@@ -91,6 +100,7 @@ function createTables() {
     CREATE INDEX IF NOT EXISTS idx_comments_user_id ON comments (user_id);
     CREATE INDEX IF NOT EXISTS idx_poll_responses_post_id ON poll_responses (post_id);
     CREATE INDEX IF NOT EXISTS idx_poll_responses_user_id ON poll_responses (user_id);
+    CREATE INDEX IF NOT EXISTS idx_session_user_id ON session (user_id);
   `)
 }
 
@@ -120,6 +130,12 @@ export function findUserByToken(token: string) {
   const db = getDatabase()
 
   return db.prepare('SELECT * FROM users WHERE token = ?').get(token)
+}
+
+export function findUserById(id: number) {
+  const db = getDatabase()
+
+  return db.prepare('SELECT * FROM users WHERE id = ?').get(id)
 }
 
 export function updateLastSeen(userId: number) {

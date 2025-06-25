@@ -1,4 +1,3 @@
-import { authenticateRequest, requireAuth } from '$lib/auth-helper'
 import {
   getPollResults,
   getPostById,
@@ -7,11 +6,14 @@ import {
 import { json } from '@sveltejs/kit'
 import type { RequestHandler } from './$types'
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
   try {
-    const user = await authenticateRequest(request)
-    requireAuth(user)
+    // Check authentication
+    if (!locals.user) {
+      return json({ error: 'Authentication required' }, { status: 401 })
+    }
 
+    const user = locals.user
     const { postId, responseData } = await request.json()
 
     // Validate input
@@ -37,27 +39,18 @@ export const POST: RequestHandler = async ({ request }) => {
     }
 
     // Submit the response
-    submitPollResponse(user?.id, postId, responseData)
+    submitPollResponse(user.id, postId, responseData)
 
     // Get updated poll results
     const pollResults = getPollResults(postId)
 
-    console.log(
-      'Poll response submitted by',
-      user?.username,
-      'for post',
-      postId,
-    )
+    console.log('Poll response submitted by', user.username, 'for post', postId)
 
     return json({
       success: true,
       pollResults,
     })
   } catch (error) {
-    if (error instanceof Error && error.message === 'Authentication required') {
-      return json({ error: 'Authentication required' }, { status: 401 })
-    }
-
     console.error('Error submitting poll response:', error)
     return json({ error: 'Failed to submit response' }, { status: 500 })
   }

@@ -6,7 +6,10 @@
       "Bash(npx prisma init --datasource-provider sqlite)",
       "Bash(find:*)",
       "Bash(grep:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "WebFetch(domain:lucia-next.pages.dev)",
+      "Bash(rm:*)",
+      "Bash(rip:*)"
     ],
     "deny": []
   }

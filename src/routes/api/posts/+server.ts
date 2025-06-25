@@ -1,12 +1,11 @@
-import { authenticateRequest, requireAuth } from '$lib/auth-helper'
 import { createPost, getPostsForFeed } from '$lib/platform-database'
 import { json } from '@sveltejs/kit'
 import type { RequestHandler } from './$types'
 
-export const GET: RequestHandler = async ({ request }) => {
+export const GET: RequestHandler = async ({ locals }) => {
   try {
     // Authentication is optional for viewing posts
-    const user = await authenticateRequest(request)
+    const user = locals.user
 
     const posts = getPostsForFeed(user?.id)
 
@@ -20,11 +19,14 @@ export const GET: RequestHandler = async ({ request }) => {
   }
 }
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
   try {
-    const user = await authenticateRequest(request)
-    requireAuth(user)
+    // Check authentication
+    if (!locals.user) {
+      return json({ error: 'Authentication required' }, { status: 401 })
+    }
 
+    const user = locals.user
     const { title, content, postType, pollConfig } = await request.json()
 
     // Validate required fields
@@ -52,28 +54,24 @@ export const POST: RequestHandler = async ({ request }) => {
 
     // Create the post
     const post = createPost(
-      user?.id,
+      user.id,
       title.trim(),
       content ? content.trim() : null,
       postType,
       pollConfig,
     )
 
-    console.log('Created post:', post.id, 'by', user?.username)
+    console.log('Created post:', post.id, 'by', user.username)
 
     return json({
       success: true,
       post: {
         ...post,
-        username: user?.username,
+        username: user.username,
         poll_config: pollConfig,
       },
     })
   } catch (error) {
-    if (error instanceof Error && error.message === 'Authentication required') {
-      return json({ error: 'Authentication required' }, { status: 401 })
-    }
-
     console.error('Error creating post:', error)
     return json({ error: 'Failed to create post' }, { status: 500 })
   }

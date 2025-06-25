@@ -1,4 +1,3 @@
-import { authenticateRequest, requireAuth } from '$lib/auth-helper'
 import {
   getCommentsForPost,
   getPollResults,
@@ -9,14 +8,15 @@ import {
 import { json } from '@sveltejs/kit'
 import type { RequestHandler } from './$types'
 
-export const GET: RequestHandler = async ({ params, request }) => {
+export const GET: RequestHandler = async ({ params, locals }) => {
   try {
     const postId = Number.parseInt(params.id)
     if (Number.isNaN(postId)) {
       return json({ error: 'Invalid post ID' }, { status: 400 })
     }
 
-    const user = await authenticateRequest(request)
+    // Authentication is optional for viewing posts
+    const user = locals.user
 
     // Get post details
     const post = getPostById(postId)
@@ -54,16 +54,19 @@ export const GET: RequestHandler = async ({ params, request }) => {
   }
 }
 
-export const PUT: RequestHandler = async ({ params, request }) => {
+export const PUT: RequestHandler = async ({ params, request, locals }) => {
   try {
     const postId = Number.parseInt(params.id)
     if (Number.isNaN(postId)) {
       return json({ error: 'Invalid post ID' }, { status: 400 })
     }
 
-    const user = await authenticateRequest(request)
-    requireAuth(user)
+    // Check authentication
+    if (!locals.user) {
+      return json({ error: 'Authentication required' }, { status: 401 })
+    }
 
+    const user = locals.user
     const { title, content, postType, pollConfig } = await request.json()
 
     // Validate input
@@ -141,9 +144,6 @@ export const PUT: RequestHandler = async ({ params, request }) => {
     })
   } catch (error) {
     if (error instanceof Error) {
-      if (error.message === 'Authentication required') {
-        return json({ error: 'Authentication required' }, { status: 401 })
-      }
       if (error.message === 'Post not found') {
         return json({ error: 'Post not found' }, { status: 404 })
       }

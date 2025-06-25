@@ -1,10 +1,16 @@
+import {
+  createSession,
+  generateSessionToken,
+  setSessionTokenCookie,
+} from '$lib/auth'
 import { createUser, isUsernameAvailable } from '$lib/platform-database'
 import { generateUniqueUsername } from '$lib/username-generator'
 import { randomBytes } from 'node:crypto'
 import { json } from '@sveltejs/kit'
 import type { RequestHandler } from './$types'
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+  const { request } = event
   try {
     // Parse request body for optional username and avatar
     let requestData = {}
@@ -71,11 +77,19 @@ export const POST: RequestHandler = async ({ request }) => {
     // Create user in database
     const user = createUser(token, username, avatar)
 
+    // Create session for the new user
+    const sessionToken = generateSessionToken()
+    const session = createSession(sessionToken, user.id)
+
+    // Set session cookie
+    setSessionTokenCookie(event, sessionToken, session.expiresAt)
+
     console.log('Created new user:', username, 'with avatar:', avatar)
 
     return json({
       success: true,
       token,
+      sessionToken,
       username,
       avatar,
       userId: user.id,

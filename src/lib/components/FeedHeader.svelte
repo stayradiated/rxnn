@@ -1,4 +1,5 @@
 <script lang="ts">
+import { dev } from '$app/environment'
 import { goto } from '$app/navigation'
 
 interface Props {
@@ -28,7 +29,9 @@ function createPoll() {
         </div>
         <div class="user-actions">
           <a href="/profile" class="btn-profile">Profile</a>
-          <button onclick={onStartLogout} class="btn-logout">Logout</button>
+          {#if dev}
+            <button onclick={onStartLogout} class="btn-logout">Logout</button>
+          {/if}
         </div>
       </div>
     {/if}

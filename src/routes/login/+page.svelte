@@ -1,19 +1,15 @@
 <script lang="ts">
 import { goto } from '$app/navigation'
-import {
-  clearTokenFromStorage,
-  getTokenFromStorage,
-  saveTokenToStorage,
-} from '$lib/token-storage'
-import { generateUsername } from '$lib/username-generator'
-import { onMount } from 'svelte'
+import { page } from '$app/stores'
+import ErrorMessage from '$lib/components/login/ErrorMessage.svelte'
+import ExistingUserLogin from '$lib/components/login/ExistingUserLogin.svelte'
 
 import LoginHeader from '$lib/components/login/LoginHeader.svelte'
 import ModeSelection from '$lib/components/login/ModeSelection.svelte'
-import UsernameSelection from '$lib/components/login/UsernameSelection.svelte'
 import TokenDisplay from '$lib/components/login/TokenDisplay.svelte'
-import ExistingUserLogin from '$lib/components/login/ExistingUserLogin.svelte'
-import ErrorMessage from '$lib/components/login/ErrorMessage.svelte'
+import UsernameSelection from '$lib/components/login/UsernameSelection.svelte'
+import { generateUsername } from '$lib/username-generator'
+import { onMount } from 'svelte'
 
 let mode: 'choose' | 'new' | 'existing' = $state('choose')
 let existingToken = $state('')
@@ -27,36 +23,11 @@ let selectedUsername = $state('')
 let generatedToken = $state('')
 
 onMount(() => {
-  // Check if user already has a token
-  const storedToken = getTokenFromStorage()
-  if (storedToken) {
-    // Verify token is still valid and redirect to feed
-    verifyAndRedirect(storedToken)
+  // Check if user is already authenticated via server-side session
+  if ($page.data?.user) {
+    goto('/feed')
   }
 })
-
-async function verifyAndRedirect(token: string) {
-  try {
-    const response = await fetch('/api/auth/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      if (data.valid) {
-        goto('/feed')
-        return
-      }
-    }
-
-    // Token invalid, clear it
-    clearTokenFromStorage()
-  } catch (err) {
-    clearTokenFromStorage()
-  }
-}
 
 function startUsernameSelection() {
   mode = 'new'
@@ -95,7 +66,7 @@ async function confirmUsername() {
 }
 
 function completeRegistration() {
-  saveTokenToStorage(generatedToken)
+  // Session cookie is already set by the create endpoint
   goto('/feed')
 }
 
@@ -126,7 +97,7 @@ async function loginWithToken() {
     if (response.ok) {
       const data = await response.json()
       if (data.valid) {
-        saveTokenToStorage(existingToken.trim())
+        // Session cookie will be set automatically on server
         goto('/feed')
         return
       }
@@ -150,7 +121,7 @@ async function loginWithToken() {
     <LoginHeader />
 
     {#if mode === 'choose'}
-      <ModeSelection 
+      <ModeSelection
         {isLoading}
         onCreateNew={startUsernameSelection}
         onUseExisting={() => mode = 'existing'}

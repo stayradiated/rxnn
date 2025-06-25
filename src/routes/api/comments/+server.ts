@@ -1,13 +1,15 @@
-import { authenticateRequest, requireAuth } from '$lib/auth-helper'
 import { createComment, getPostById } from '$lib/platform-database'
 import { json } from '@sveltejs/kit'
 import type { RequestHandler } from './$types'
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
   try {
-    const user = await authenticateRequest(request)
-    requireAuth(user)
+    // Check authentication
+    if (!locals.user) {
+      return json({ error: 'Authentication required' }, { status: 401 })
+    }
 
+    const user = locals.user
     const { postId, content } = await request.json()
 
     // Validate input
@@ -30,22 +32,18 @@ export const POST: RequestHandler = async ({ request }) => {
     }
 
     // Create the comment
-    const comment = createComment(user?.id, postId, content.trim())
+    const comment = createComment(user.id, postId, content.trim())
 
-    console.log('Comment created by', user?.username, 'on post', postId)
+    console.log('Comment created by', user.username, 'on post', postId)
 
     return json({
       success: true,
       comment: {
         ...comment,
-        username: user?.username,
+        username: user.username,
       },
     })
   } catch (error) {
-    if (error instanceof Error && error.message === 'Authentication required') {
-      return json({ error: 'Authentication required' }, { status: 401 })
-    }
-
     console.error('Error creating comment:', error)
     return json({ error: 'Failed to create comment' }, { status: 500 })
   }

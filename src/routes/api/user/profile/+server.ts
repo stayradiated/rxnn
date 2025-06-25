@@ -1,13 +1,15 @@
-import { authenticateRequest, requireAuth } from '$lib/auth-helper'
 import { isUsernameAvailable, updateUserProfile } from '$lib/platform-database'
 import { json } from '@sveltejs/kit'
 import type { RequestHandler } from './$types'
 
-export const PUT: RequestHandler = async ({ request }) => {
+export const PUT: RequestHandler = async ({ request, locals }) => {
   try {
-    const user = await authenticateRequest(request)
-    requireAuth(user)
+    // Check authentication
+    if (!locals.user) {
+      return json({ error: 'Authentication required' }, { status: 401 })
+    }
 
+    const user = locals.user
     const { username, avatar } = await request.json()
 
     // Validate that at least one field is being updated
@@ -87,13 +89,8 @@ export const PUT: RequestHandler = async ({ request }) => {
       },
     })
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Authentication required') {
-        return json({ error: 'Authentication required' }, { status: 401 })
-      }
-      if (error.message === 'User not found') {
-        return json({ error: 'User not found' }, { status: 404 })
-      }
+    if (error instanceof Error && error.message === 'User not found') {
+      return json({ error: 'User not found' }, { status: 404 })
     }
 
     console.error('Error updating user profile:', error)

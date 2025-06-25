@@ -1,10 +1,9 @@
 <script lang="ts">
-import { browser } from '$app/environment'
+import { dev } from '$app/environment'
 import { goto } from '$app/navigation'
 import FeedHeader from '$lib/components/FeedHeader.svelte'
 import LogoutModal from '$lib/components/LogoutModal.svelte'
 import PostCard from '$lib/components/PostCard.svelte'
-import { clearTokenFromStorage, getTokenFromStorage } from '$lib/token-storage'
 import { onMount } from 'svelte'
 import type { PageData } from './$types'
 
@@ -14,42 +13,18 @@ interface Props {
 
 let { data }: Props = $props()
 
-let token = $state('')
-let currentUser: any = $state(null)
-let isLoading = false
+// Get user from server-side data
+let currentUser = $state(data.user)
 
-// Logout confirmation flow
+// Logout confirmation flow (only used in production)
 let showLogoutModal = $state(false)
 let tokenConfirmation = $state('')
 let logoutError = $state('')
 
-onMount(async () => {
-  token = getTokenFromStorage() || ''
-
-  if (!token) {
-    goto('/login')
-    return
-  }
-
-  // Verify token and get user info
-  try {
-    const response = await fetch('/api/auth/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
-    })
-
-    if (response.ok) {
-      const authData = await response.json()
-      if (authData.valid) {
-        currentUser = authData.user
-      } else {
-        goto('/login')
-      }
-    } else {
-      goto('/login')
-    }
-  } catch (error) {
+onMount(() => {
+  // Server-side authentication check via hooks.server.ts
+  // If user is null, redirect to login
+  if (!currentUser) {
     goto('/login')
   }
 })
@@ -97,10 +72,16 @@ function getPostTypeLabel(postType: string) {
   }
 }
 
-function startLogout() {
-  showLogoutModal = true
-  tokenConfirmation = ''
-  logoutError = ''
+async function startLogout() {
+  // In development mode, logout instantly without any modal or confirmation
+  if (dev) {
+    await performLogout()
+    return
+  }
+
+  // In production, this function shouldn't be called since button is hidden
+  // But if it is, just perform logout without modal since there's no logout button in production
+  await performLogout()
 }
 
 function cancelLogout() {
@@ -109,14 +90,30 @@ function cancelLogout() {
   logoutError = ''
 }
 
-function confirmLogout() {
-  if (tokenConfirmation.trim() !== token) {
+async function confirmLogout() {
+  if (tokenConfirmation.trim() !== currentUser?.token) {
     logoutError =
       'Token does not match. Please copy and paste your token exactly.'
     return
   }
 
-  clearTokenFromStorage()
+  await performLogout()
+}
+
+async function performLogout() {
+  try {
+    // Call logout API to invalidate session cookie
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+  } catch (error) {
+    console.error('Error during logout:', error)
+    // Continue with logout even if API call fails
+  }
+
+  // Redirect to login page
   goto('/login')
 }
 </script>
@@ -148,7 +145,6 @@ function confirmLogout() {
       {#each data.posts as post (post.id)}
         <PostCard
           {post}
-          {token}
           {currentUser}
           {formatTimeAgo}
           {getPostTypeIcon}
@@ -158,10 +154,10 @@ function confirmLogout() {
     {/if}
   </div>
 
-  <!-- Logout Confirmation Modal -->
+  <!-- Logout Confirmation Modal (only shown in production) -->
   <LogoutModal
     show={showLogoutModal}
-    {token}
+    token={currentUser?.token || ''}
     bind:tokenConfirmation
     bind:logoutError
     onCancel={cancelLogout}
