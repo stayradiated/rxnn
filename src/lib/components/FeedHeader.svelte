@@ -1,0 +1,122 @@
+<script lang="ts">
+import { goto } from '$app/navigation'
+
+export let currentUser: any = null
+export let onStartLogout: () => void
+
+function createTextPost() {
+  goto('/post/text')
+}
+
+function createPoll() {
+  goto('/post/poll')
+}
+</script>
+
+<header class="header">
+  <div class="header-content">
+    <h1>🗣️ Anonymous Voice</h1>
+    {#if currentUser}
+      <div class="user-info">
+        <span class="username">@{currentUser.username}</span>
+        <button on:click={onStartLogout} class="btn-logout">Logout</button>
+      </div>
+    {/if}
+  </div>
+
+  <div class="header-actions">
+    <button on:click={createTextPost} class="btn-primary btn-text">
+      💬 Create Text Post
+    </button>
+    <button on:click={createPoll} class="btn-primary btn-poll">
+      📊 Create Poll
+    </button>
+  </div>
+</header>
+
+<style>
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .header-content h1 {
+    color: #2563eb;
+    margin: 0;
+    font-size: 1.8rem;
+  }
+
+  .user-info {
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .username {
+    color: #6b7280;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .btn-logout {
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 0.25rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+
+  .btn-logout:hover {
+    background: #e5e7eb;
+    color: #374151;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .btn-primary {
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  @media (max-width: 768px) {
+    .header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+    }
+
+    .header-actions {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .header-content {
+      text-align: center;
+    }
+  }
+</style>

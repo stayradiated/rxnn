@@ -468,8 +468,3 @@ export function generateUniqueUsername(
 
   return `${baseUsername}${randomSuffix}`
 }
-
-// Get total possible combinations (for info/debugging)
-export function getTotalCombinations(): number {
-  return ADJECTIVES.length * ANIMALS.length
-}

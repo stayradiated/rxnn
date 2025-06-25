@@ -18,9 +18,3 @@ export function clearTokenFromStorage(): void {
     localStorage.removeItem(TOKEN_KEY)
   }
 }
-
-// TODO: unused
-export function hasStoredToken(): boolean {
-  const token = getTokenFromStorage()
-  return token !== null && token.length === 64
-}

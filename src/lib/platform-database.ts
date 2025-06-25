@@ -115,24 +115,6 @@ export function findUserByToken(token: string) {
   return db.prepare('SELECT * FROM users WHERE token = ?').get(token)
 }
 
-// TODO: unused
-export function findUserById(id: number) {
-  const db = getDatabase()
-
-  return db.prepare('SELECT * FROM users WHERE id = ?').get(id)
-}
-
-// TOOD: unused
-export function updateUsername(userId: number, username: string) {
-  const db = getDatabase()
-
-  return db
-    .prepare(
-      'UPDATE users SET username = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-    )
-    .run(username, userId)
-}
-
 export function updateLastSeen(userId: number) {
   const db = getDatabase()
 
