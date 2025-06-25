@@ -1,40 +1,40 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
-	import { goto } from '$app/navigation';
+import { browser } from '$app/environment'
+import { goto } from '$app/navigation'
 
-	function startSurvey() {
-		if (browser) {
-			goto('/survey');
-		}
-	}
+function startSurvey() {
+  if (browser) {
+    goto('/survey')
+  }
+}
 </script>
 
 <svelte:head>
-	<title>Anonymous Employee Survey</title>
+  <title>Anonymous Employee Survey</title>
 </svelte:head>
 
 <main class="container">
-	<h1>Anonymous Employee Survey</h1>
-	
-	<div class="intro">
-		<p>This survey is anonymous and will stay open indefinitely.</p>
-		<p>Responses (but not your identity) will be displayed live on a shared dashboard so everyone can see aggregate results as they come in.</p>
-		
-		<div class="features">
-			<h2>Key Features</h2>
-			<ul>
-				<li>✅ Completely anonymous - no personal data collected</li>
-				<li>✅ Return anytime to update your responses</li>
-				<li>✅ Live results dashboard</li>
-				<li>✅ Privacy protected - minimum thresholds apply</li>
-			</ul>
-		</div>
-	</div>
+  <h1>Anonymous Employee Survey</h1>
 
-	<div class="actions">
-		<button on:click={startSurvey} class="btn-primary">Start Survey</button>
-		<a href="/results" class="btn-secondary">View Results</a>
-	</div>
+  <div class="intro">
+    <p>This survey is anonymous and will stay open indefinitely.</p>
+    <p>Responses (but not your identity) will be displayed live on a shared dashboard so everyone can see aggregate results as they come in.</p>
+
+    <div class="features">
+      <h2>Key Features</h2>
+      <ul>
+        <li>✅ Completely anonymous - no personal data collected</li>
+        <li>✅ Return anytime to update your responses</li>
+        <li>✅ Live results dashboard</li>
+        <li>✅ Privacy protected - minimum thresholds apply</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button on:click={startSurvey} class="btn-primary">Start Survey</button>
+    <a href="/results" class="btn-secondary">View Results</a>
+  </div>
 </main>
 
 <style>

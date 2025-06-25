@@ -1,128 +1,94 @@
 <script lang="ts">
-	import type { PageData } from './$types';
-	import { onMount } from 'svelte';
+import { onMount } from 'svelte'
+import type { PageData } from './$types'
 
-	export let data: PageData;
+export let data: PageData
 
-	let refreshInterval: NodeJS.Timeout;
+let refreshInterval: NodeJS.Timeout
 
-	onMount(() => {
-		// Auto-refresh every 30 seconds
-		refreshInterval = setInterval(() => {
-			window.location.reload();
-		}, 30000);
+onMount(() => {
+  // Auto-refresh every 30 seconds
+  refreshInterval = setInterval(() => {
+    window.location.reload()
+  }, 30000)
 
-		return () => {
-			if (refreshInterval) {
-				clearInterval(refreshInterval);
-			}
-		};
-	});
+  return () => {
+    if (refreshInterval) {
+      clearInterval(refreshInterval)
+    }
+  }
+})
 
-	function formatDate(dateString: string) {
-		return new Date(dateString).toLocaleString();
-	}
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleString()
+}
 
-	function getPercentage(value: number, total: number) {
-		return Math.round((value / total) * 100);
-	}
+function getPercentage(value: number, total: number) {
+  return Math.round((value / total) * 100)
+}
 </script>
 
 <svelte:head>
-	<title>Survey Results Dashboard</title>
+  <title>Survey Results Dashboard</title>
 </svelte:head>
 
 <main class="container">
-	<div class="header">
-		<h1>Anonymous Survey Results</h1>
-		<div class="stats">
-			<div class="stat">
-				<span class="stat-number">{data.data.totalResponses}</span>
-				<span class="stat-label">Total Responses</span>
-			</div>
-			<div class="stat">
-				<span class="stat-number">Live</span>
-				<span class="stat-label">Updates Every 30s</span>
-			</div>
-		</div>
-	</div>
+  <div class="header">
+    <h1>Anonymous Survey Results</h1>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-number">{data.data.totalResponses}</span>
+        <span class="stat-label">Total Responses</span>
+      </div>
+      <div class="stat">
+        <span class="stat-number">Live</span>
+        <span class="stat-label">Updates Every 30s</span>
+      </div>
+    </div>
+  </div>
 
-	{#if !data.hasMinimumResponses}
-		<div class="privacy-notice">
-			<h2>🔒 Privacy Protection Active</h2>
-			<p>Results will be displayed once we have at least 5 responses to protect anonymity.</p>
-			<p>Current responses: {data.data.totalResponses}/5</p>
-		</div>
-	{:else}
-		<div class="results-grid">
-			<!-- Demographics Section -->
-			<div class="result-card">
-				<h2>Department Distribution</h2>
-				<div class="chart-container">
-					{#each Object.entries(data.data.demographics.department) as [dept, count]}
-						<div class="bar-item">
-							<span class="bar-label">{dept.charAt(0).toUpperCase() + dept.slice(1)}</span>
-							<div class="bar">
-								<div class="bar-fill" style="width: {getPercentage(count, data.data.totalResponses)}%"></div>
-							</div>
-							<span class="bar-value">{count} ({getPercentage(count, data.data.totalResponses)}%)</span>
-						</div>
-					{/each}
-				</div>
-			</div>
+  {#if !data.hasMinimumResponses}
+    <div class="privacy-notice">
+      <h2>🔒 Privacy Protection Active</h2>
+      <p>Results will be displayed once we have at least 5 responses to protect anonymity.</p>
+      <p>Current responses: {data.data.totalResponses}/5</p>
+    </div>
+  {:else}
+    <div class="results-grid">
+      <!-- Show available response data -->
+      {#if data.data.responses}
+        {#each Object.entries(data.data.responses) as [questionId, answers] (questionId)}
+          <div class="result-card">
+            <h2>{questionId.charAt(0).toUpperCase() + questionId.slice(1).replace(/([A-Z])/g, ' $1')}</h2>
+            <div class="chart-container">
+              {#each Object.entries(answers) as [answer, count], index (index)}
+                <div class="bar-item">
+                  <span class="bar-label">{answer}</span>
+                  <div class="bar">
+                    <div class="bar-fill" style:width="{getPercentage(count, data.data.totalResponses)}%"></div>
+                  </div>
+                  <span class="bar-value">{count} ({getPercentage(count, data.data.totalResponses)}%)</span>
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/each}
+      {:else}
+        <div class="result-card">
+          <h2>No Data Available</h2>
+          <p>No survey responses have been recorded yet.</p>
+        </div>
+      {/if}
+    </div>
+  {/if}
 
-			<div class="result-card">
-				<h2>Tenure at Company</h2>
-				<div class="chart-container">
-					{#each Object.entries(data.data.demographics.tenure) as [period, count]}
-						<div class="bar-item">
-							<span class="bar-label">{period} years</span>
-							<div class="bar">
-								<div class="bar-fill" style="width: {getPercentage(count, data.data.totalResponses)}%"></div>
-							</div>
-							<span class="bar-value">{count} ({getPercentage(count, data.data.totalResponses)}%)</span>
-						</div>
-					{/each}
-				</div>
-			</div>
-
-			<!-- Four-Day Week Section -->
-			<div class="result-card">
-				<h2>Four-Day Week Usage</h2>
-				<div class="metric">
-					<span class="metric-value">{data.data.fourDayWeek.averageUsage}%</span>
-					<span class="metric-label">Average weeks worked as 4-day</span>
-				</div>
-			</div>
-
-			<div class="result-card">
-				<h2>Likelihood to Choose 4-Day (if optional)</h2>
-				<div class="chart-container">
-					{#each Object.entries(data.data.fourDayWeek.likelihood) as [rating, count]}
-						<div class="bar-item">
-							<span class="bar-label">Rating {rating}</span>
-							<div class="bar">
-								<div class="bar-fill" style="width: {getPercentage(count, data.data.totalResponses)}%"></div>
-							</div>
-							<span class="bar-value">{count} responses</span>
-						</div>
-					{/each}
-				</div>
-				<div class="scale-labels">
-					<span>1 = Not at all</span>
-					<span>5 = Absolutely</span>
-				</div>
-			</div>
-		</div>
-	{/if}
-
-	<div class="footer">
-		<p>Last updated: {formatDate(data.data.lastUpdated)}</p>
-		<div class="actions">
-			<a href="/" class="btn-secondary">Back to Survey</a>
-			<button on:click={() => window.location.reload()} class="btn-primary">Refresh Results</button>
-		</div>
-	</div>
+  <div class="footer">
+    <p>Last updated: {formatDate(data.data.lastUpdated)}</p>
+    <div class="actions">
+      <a href="/" class="btn-secondary">Back to Survey</a>
+      <button on:click={() => window.location.reload()} class="btn-primary">Refresh Results</button>
+    </div>
+  </div>
 </main>
 
 <style>

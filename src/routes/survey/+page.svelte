@@ -1,145 +1,189 @@
 <script lang="ts">
-	import type { PageData } from './$types';
-	import { goto } from '$app/navigation';
-	import { browser } from '$app/environment';
+import { browser } from '$app/environment'
+import { goto } from '$app/navigation'
+import { page } from '$app/state'
+import type { PageData } from './$types'
 
-	export let data: PageData;
+export let data: PageData
 
-	let responses = data.responses || {};
-	let currentStep = 1;
-	const totalSteps = 8;
+let responses = data.responses || {}
+let currentStep = 1
+const totalSteps = 8
 
-	function nextStep() {
-		if (currentStep < totalSteps) {
-			currentStep++;
-		}
-	}
+async function nextStep() {
+  if (currentStep < totalSteps) {
+    await handleStepChange()
+    currentStep++
+  }
+}
 
-	function prevStep() {
-		if (currentStep > 1) {
-			currentStep--;
-		}
-	}
+async function prevStep() {
+  if (currentStep > 1) {
+    await handleStepChange()
+    currentStep--
+  }
+}
 
-	function goToResults() {
-		if (browser) {
-			goto('/results');
-		}
-	}
+function goToResults() {
+  if (browser) {
+    goto('/results')
+  }
+}
 
-	function saveAndExit() {
-		// TODO: Save responses to database
-		alert('Your responses have been saved. You can return anytime using this URL to update them.');
-	}
+async function saveResponses() {
+  try {
+    const response = await fetch('/api/responses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        token: data.token,
+        responses,
+      }),
+    })
+
+    if (response.ok) {
+      return true
+    }
+    console.error('Failed to save responses:', await response.text())
+    return false
+  } catch (error) {
+    console.error('Error saving responses:', error)
+    return false
+  }
+}
+
+async function saveAndExit() {
+  const saved = await saveResponses()
+  if (saved) {
+    alert(
+      'Your responses have been saved. You can return anytime using this URL to update them.',
+    )
+  } else {
+    alert('There was an error saving your responses. Please try again.')
+  }
+}
+
+async function handleStepChange() {
+  // Auto-save responses when moving between steps
+  await saveResponses()
+}
 </script>
 
 <svelte:head>
-	<title>Employee Survey - Step {currentStep} of {totalSteps}</title>
+  <title>Employee Survey - Step {currentStep} of {totalSteps}</title>
 </svelte:head>
 
 <main class="container">
-	<div class="header">
-		<h1>Anonymous Employee Survey</h1>
-		<div class="progress">
-			<div class="progress-bar" style="width: {(currentStep / totalSteps) * 100}%"></div>
-		</div>
-		<p class="step-info">Step {currentStep} of {totalSteps}</p>
-	</div>
+  <div class="header">
+    <h1>Anonymous Employee Survey</h1>
+    <div class="progress">
+      <div class="progress-bar" style:width="{(currentStep / totalSteps) * 100}%"></div>
+    </div>
+    <p class="step-info">Step {currentStep} of {totalSteps}</p>
+  </div>
 
-	<div class="survey-content">
-		{#if currentStep === 1}
-			<div class="intro-step">
-				<h2>Survey Introduction</h2>
-				<p>This survey is anonymous and will stay open indefinitely.</p>
-				<p>Responses (but not your identity) will be displayed live on a shared dashboard so everyone can see aggregate results as they come in.</p>
-				<p><strong>Your unique URL:</strong> <code>{window?.location?.href || ''}</code></p>
-				<p class="bookmark-notice">📌 Bookmark this page to return and update your responses anytime!</p>
-			</div>
-		{:else if currentStep === 2}
-			<div class="step">
-				<h2>Role Context</h2>
-				
-				<div class="question">
-					<label>1. Which department are you in?</label>
-					<div class="options">
-						<label><input type="radio" name="department" value="engineering" bind:group={responses.department}> Engineering</label>
-						<label><input type="radio" name="department" value="product" bind:group={responses.department}> Product</label>
-						<label><input type="radio" name="department" value="marketing" bind:group={responses.department}> Marketing</label>
-						<label><input type="radio" name="department" value="sales" bind:group={responses.department}> Sales</label>
-						<label><input type="radio" name="department" value="customer-success" bind:group={responses.department}> Customer Success</label>
-						<label><input type="radio" name="department" value="operations" bind:group={responses.department}> Operations</label>
-						<label><input type="radio" name="department" value="leadership" bind:group={responses.department}> Leadership</label>
-						<label><input type="radio" name="department" value="board" bind:group={responses.department}> Board</label>
-						<label><input type="radio" name="department" value="prefer-not-to-say" bind:group={responses.department}> Prefer not to say</label>
-					</div>
-				</div>
+  <div class="survey-content">
+    {#if currentStep === 1}
+      <div class="intro-step">
+        <h2>Survey Introduction</h2>
+        <p>This survey is anonymous and will stay open indefinitely.</p>
+        <p>Responses (but not your identity) will be displayed live on a shared dashboard so everyone can see aggregate results as they come in.</p>
+        <p><strong>Your unique URL:</strong> <code>{page.url.href}</code></p>
+        <p class="bookmark-notice">📌 Bookmark this page to return and update your responses anytime!</p>
+      </div>
+    {:else if currentStep === 2}
+      <div class="step">
+        <h2>Role Context</h2>
 
-				<div class="question">
-					<label>2. How long have you worked at Runn?</label>
-					<div class="options">
-						<label><input type="radio" name="tenure" value="0-1" bind:group={responses.tenure}> 0–1 year</label>
-						<label><input type="radio" name="tenure" value="1-2" bind:group={responses.tenure}> 1–2 years</label>
-						<label><input type="radio" name="tenure" value="2-3" bind:group={responses.tenure}> 2–3 years</label>
-						<label><input type="radio" name="tenure" value="3+" bind:group={responses.tenure}> 3+ years</label>
-						<label><input type="radio" name="tenure" value="prefer-not-to-say" bind:group={responses.tenure}> Prefer not to say</label>
-					</div>
-				</div>
-			</div>
-		{:else if currentStep === 3}
-			<div class="step">
-				<h2>Four-Day Week Usage</h2>
-				
-				<div class="question">
-					<label>3. Roughly what % of weeks do you work a four-day (32h) week?</label>
-					<div class="slider-container">
-						<input type="range" min="0" max="100" bind:value={responses.fourDayWeekPercentage} class="slider">
-						<div class="slider-labels">
-							<span>0% - Never</span>
-							<span>{responses.fourDayWeekPercentage || 0}%</span>
-							<span>100% - Every week</span>
-						</div>
-					</div>
-				</div>
+        <div class="question">
+          <label>1. Which department are you in?</label>
+          <div class="options">
+            <label><input type="radio" name="department" value="engineering" bind:group={responses.department} /> Engineering</label>
+            <label><input type="radio" name="department" value="product" bind:group={responses.department} /> Product</label>
+            <label><input type="radio" name="department" value="marketing" bind:group={responses.department} /> Marketing</label>
+            <label><input type="radio" name="department" value="sales" bind:group={responses.department} /> Sales</label>
+            <label><input type="radio" name="department" value="customer-success" bind:group={responses.department} /> Customer Success</label>
+            <label><input type="radio" name="department" value="operations" bind:group={responses.department} /> Operations</label>
+            <label><input type="radio" name="department" value="leadership" bind:group={responses.department} /> Leadership</label>
+            <label><input type="radio" name="department" value="board" bind:group={responses.department} /> Board</label>
+            <label><input type="radio" name="department" value="prefer-not-to-say" bind:group={responses.department} /> Prefer not to say</label>
+          </div>
+        </div>
 
-				<div class="question">
-					<label>4. If four-day remains optional, how likely are you to choose it?</label>
-					<div class="scale">
-						{#each [1, 2, 3, 4, 5] as value}
-							<label class="scale-item">
-								<input type="radio" name="fourDayLikelihood" {value} bind:group={responses.fourDayLikelihood}>
-								<span>{value}</span>
-							</label>
-						{/each}
-					</div>
-					<div class="scale-labels">
-						<span>1 = Not at all</span>
-						<span>5 = Absolutely</span>
-					</div>
-				</div>
-			</div>
-		{:else}
-			<div class="step">
-				<h2>Survey Complete</h2>
-				<p>Thank you for participating in our anonymous survey!</p>
-				<p>Your responses have been recorded. You can return to this URL anytime to update your answers.</p>
-				
-				<div class="final-actions">
-					<button on:click={goToResults} class="btn-primary">View Results Dashboard</button>
-					<button on:click={saveAndExit} class="btn-secondary">Save & Bookmark</button>
-				</div>
-			</div>
-		{/if}
-	</div>
+        <div class="question">
+          <label>2. How long have you worked at Runn?</label>
+          <div class="options">
+            <label><input type="radio" name="tenure" value="0-1" bind:group={responses.tenure} /> 0–1 year</label>
+            <label><input type="radio" name="tenure" value="1-2" bind:group={responses.tenure} /> 1–2 years</label>
+            <label><input type="radio" name="tenure" value="2-3" bind:group={responses.tenure} /> 2–3 years</label>
+            <label><input type="radio" name="tenure" value="3+" bind:group={responses.tenure} /> 3+ years</label>
+            <label><input type="radio" name="tenure" value="prefer-not-to-say" bind:group={responses.tenure} /> Prefer not to say</label>
+          </div>
+        </div>
+      </div>
+    {:else if currentStep === 3}
+      <div class="step">
+        <h2>Four-Day Week Usage</h2>
 
-	<div class="navigation">
-		{#if currentStep > 1}
-			<button on:click={prevStep} class="btn-nav">← Previous</button>
-		{/if}
-		
-		{#if currentStep < totalSteps}
-			<button on:click={nextStep} class="btn-nav btn-primary">Next →</button>
-		{/if}
-	</div>
+        <div class="question">
+          <label>3. Roughly what % of weeks do you work a four-day (32h) week?</label>
+          <div class="slider-container">
+            <input
+              type="range"
+              min="0"
+              max="100"
+              bind:value={responses.fourDayWeekPercentage}
+              class="slider"
+            />
+            <div class="slider-labels">
+              <span>0% - Never</span>
+              <span>{responses.fourDayWeekPercentage || 0}%</span>
+              <span>100% - Every week</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="question">
+          <label>4. If four-day remains optional, how likely are you to choose it?</label>
+          <div class="scale">
+            {#each [1, 2, 3, 4, 5] as value (value)}
+              <label class="scale-item">
+                <input type="radio" name="fourDayLikelihood" {value} bind:group={responses.fourDayLikelihood} />
+                <span>{value}</span>
+              </label>
+            {/each}
+          </div>
+          <div class="scale-labels">
+            <span>1 = Not at all</span>
+            <span>5 = Absolutely</span>
+          </div>
+        </div>
+      </div>
+    {:else}
+      <div class="step">
+        <h2>Survey Complete</h2>
+        <p>Thank you for participating in our anonymous survey!</p>
+        <p>Your responses have been recorded. You can return to this URL anytime to update your answers.</p>
+
+        <div class="final-actions">
+          <button on:click={goToResults} class="btn-primary">View Results Dashboard</button>
+          <button on:click={saveAndExit} class="btn-secondary">Save & Bookmark</button>
+        </div>
+      </div>
+    {/if}
+  </div>
+
+  <div class="navigation">
+    {#if currentStep > 1}
+      <button on:click={prevStep} class="btn-nav">← Previous</button>
+    {/if}
+
+    {#if currentStep < totalSteps}
+      <button on:click={nextStep} class="btn-nav btn-primary">Next →</button>
+    {/if}
+  </div>
 </main>
 
 <style>
