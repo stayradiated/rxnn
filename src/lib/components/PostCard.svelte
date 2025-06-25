@@ -1,9 +1,11 @@
 <script lang="ts">
+import { goto } from '$app/navigation'
 import CommentsSection from './CommentsSection.svelte'
 import PollSection from './PollSection.svelte'
 
 export let post: any
 export let token: string
+export let currentUser: any = null
 export let formatTimeAgo: (dateString: string) => string
 export let getPostTypeIcon: (postType: string) => string
 export let getPostTypeLabel: (postType: string) => string
@@ -132,26 +134,40 @@ async function submitComment() {
       <span class="post-type">
         {getPostTypeIcon(post.post_type)} {getPostTypeLabel(post.post_type)}
       </span>
-      <span class="post-author">by {post.username}</span>
+      <span class="post-author">
+        <span class="post-author-avatar">{post.avatar || '😊'}</span>
+        by {post.username}
+      </span>
       <span class="post-time">{formatTimeAgo(post.created_at)}</span>
     </div>
 
-    {#if post.post_type !== 'text'}
-      <div class="engagement-stats">
-        <span class="stat">
-          📊 {post.response_count} responses
-        </span>
-        <span class="stat">
-          💬 {post.comment_count} comments
-        </span>
-      </div>
-    {:else}
-      <div class="engagement-stats">
-        <span class="stat">
-          💬 {post.comment_count} comments
-        </span>
-      </div>
-    {/if}
+    <div class="post-actions-header">
+      {#if post.post_type !== 'text'}
+        <div class="engagement-stats">
+          <span class="stat">
+            📊 {post.response_count} responses
+          </span>
+          <span class="stat">
+            💬 {post.comment_count} comments
+          </span>
+        </div>
+      {:else}
+        <div class="engagement-stats">
+          <span class="stat">
+            💬 {post.comment_count} comments
+          </span>
+        </div>
+      {/if}
+
+      {#if currentUser && currentUser.id === post.user_id}
+        <a
+          href="/post/{post.id}/edit"
+          class="btn-edit-post"
+          title="Edit this post">
+          ✏️ Edit
+        </a>
+      {/if}
+    </div>
   </div>
 
   <h2 class="post-title">{post.title}</h2>
@@ -228,11 +244,33 @@ async function submitComment() {
     color: #6b7280;
     font-size: 0.9rem;
     font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .post-author-avatar {
+    font-size: 1rem;
+    background: #f3f4f6;
+    border-radius: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e5e7eb;
   }
 
   .post-time {
     color: #9ca3af;
     font-size: 0.8rem;
+  }
+
+  .post-actions-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
   }
 
   .engagement-stats {
@@ -246,6 +284,26 @@ async function submitComment() {
     display: flex;
     align-items: center;
     gap: 0.25rem;
+  }
+
+  .btn-edit-post {
+    background: #f59e0b;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.25rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .btn-edit-post:hover {
+    background: #d97706;
+    transform: translateY(-1px);
   }
 
   .post-title {
@@ -276,8 +334,20 @@ async function submitComment() {
       justify-content: center;
     }
 
+    .post-actions-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+    }
+
     .engagement-stats {
       justify-content: center;
+    }
+
+    .btn-edit-post {
+      align-self: center;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
     }
   }
 </style>

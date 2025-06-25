@@ -32,6 +32,13 @@ function createTables() {
     )
   `)
 
+  // Add avatar column if it doesn't exist (for existing databases)
+  try {
+    db.exec('ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT "😊"')
+  } catch (_error) {
+    // Column already exists, ignore error
+  }
+
   // Posts table - text posts and polls
   db.exec(`
     CREATE TABLE IF NOT EXISTS posts (
@@ -95,16 +102,16 @@ export function getDatabase() {
 }
 
 // User operations
-export function createUser(token: string, username: string) {
+export function createUser(token: string, username: string, avatar = '😊') {
   const db = getDatabase()
 
   const result = db
     .prepare(`
-      INSERT INTO users (token, username) 
-      VALUES (?, ?) 
+      INSERT INTO users (token, username, avatar) 
+      VALUES (?, ?, ?) 
       RETURNING *
     `)
-    .get(token, username)
+    .get(token, username, avatar)
 
   return result
 }
@@ -121,6 +128,45 @@ export function updateLastSeen(userId: number) {
   return db
     .prepare('UPDATE users SET last_seen = CURRENT_TIMESTAMP WHERE id = ?')
     .run(userId)
+}
+
+export function updateUserProfile(
+  userId: number,
+  username?: string,
+  avatar?: string,
+) {
+  const db = getDatabase()
+
+  // Build dynamic query based on what fields are being updated
+  const updates: string[] = []
+  const values: any[] = []
+
+  if (username !== undefined) {
+    updates.push('username = ?')
+    values.push(username)
+  }
+
+  if (avatar !== undefined) {
+    updates.push('avatar = ?')
+    values.push(avatar)
+  }
+
+  if (updates.length === 0) {
+    throw new Error('No fields to update')
+  }
+
+  updates.push('updated_at = CURRENT_TIMESTAMP')
+  values.push(userId)
+
+  const query = `UPDATE users SET ${updates.join(', ')} WHERE id = ? RETURNING *`
+
+  const result = db.prepare(query).get(...values)
+
+  if (!result) {
+    throw new Error('User not found')
+  }
+
+  return result
 }
 
 export function isUsernameAvailable(username: string, excludeUserId?: number) {
@@ -170,6 +216,7 @@ export function getPostsForFeed(_userId?: number) {
       SELECT 
         p.*,
         u.username,
+        u.avatar,
         (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
         (SELECT COUNT(*) FROM poll_responses pr WHERE pr.post_id = p.id) as response_count
       FROM posts p
@@ -191,7 +238,8 @@ export function getPostById(id: number) {
     .prepare(`
       SELECT 
         p.*,
-        u.username
+        u.username,
+        u.avatar
       FROM posts p
       JOIN users u ON p.user_id = u.id
       WHERE p.id = ?
@@ -203,6 +251,55 @@ export function getPostById(id: number) {
   return {
     ...post,
     poll_config: post.poll_config ? JSON.parse(post.poll_config) : null,
+  }
+}
+
+export function updatePost(
+  id: number,
+  userId: number,
+  title: string,
+  content: string | null,
+  postType: string,
+  pollConfig?: object,
+) {
+  const db = getDatabase()
+
+  // First check if the post exists and belongs to the user
+  const existingPost = db
+    .prepare('SELECT user_id FROM posts WHERE id = ?')
+    .get(id)
+
+  if (!existingPost) {
+    throw new Error('Post not found')
+  }
+
+  if (existingPost.user_id !== userId) {
+    throw new Error('Unauthorized: You can only edit your own posts')
+  }
+
+  const result = db
+    .prepare(`
+      UPDATE posts 
+      SET title = ?, content = ?, post_type = ?, poll_config = ?
+      WHERE id = ? AND user_id = ?
+      RETURNING *
+    `)
+    .get(
+      title,
+      content,
+      postType,
+      pollConfig ? JSON.stringify(pollConfig) : null,
+      id,
+      userId,
+    )
+
+  if (!result) {
+    throw new Error('Failed to update post')
+  }
+
+  return {
+    ...result,
+    poll_config: result.poll_config ? JSON.parse(result.poll_config) : null,
   }
 }
 
@@ -228,7 +325,8 @@ export function getCommentsForPost(postId: number) {
     .prepare(`
       SELECT 
         c.*,
-        u.username
+        u.username,
+        u.avatar
       FROM comments c
       JOIN users u ON c.user_id = u.id
       WHERE c.post_id = ?

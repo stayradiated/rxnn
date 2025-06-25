@@ -145,6 +145,7 @@ function confirmLogout() {
         <PostCard
           {post}
           {token}
+          {currentUser}
           {formatTimeAgo}
           {getPostTypeIcon}
           {getPostTypeLabel}

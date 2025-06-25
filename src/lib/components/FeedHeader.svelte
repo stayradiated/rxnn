@@ -18,8 +18,14 @@ function createPoll() {
     <h1>🗣️ Anonymous Voice</h1>
     {#if currentUser}
       <div class="user-info">
-        <span class="username">@{currentUser.username}</span>
-        <button on:click={onStartLogout} class="btn-logout">Logout</button>
+        <div class="user-profile">
+          <span class="user-avatar">{currentUser.avatar || '😊'}</span>
+          <span class="username">@{currentUser.username}</span>
+        </div>
+        <div class="user-actions">
+          <a href="/profile" class="btn-profile">Profile</a>
+          <button on:click={onStartLogout} class="btn-logout">Logout</button>
+        </div>
       </div>
     {/if}
   </div>
@@ -53,14 +59,55 @@ function createPoll() {
   .user-info {
     margin-top: 0.5rem;
     display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .user-profile {
+    display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.5rem;
+  }
+
+  .user-avatar {
+    font-size: 1.2rem;
+    background: #f3f4f6;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #e5e7eb;
   }
 
   .username {
     color: #6b7280;
     font-size: 0.9rem;
     font-weight: 500;
+  }
+
+  .user-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-profile {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.25rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .btn-profile:hover {
+    background: #2563eb;
   }
 
   .btn-logout {
