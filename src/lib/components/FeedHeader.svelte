@@ -20,7 +20,7 @@ function createPoll() {
 
 <header class="header">
   <div class="header-content">
-    <h1>🗣️ Rxnn</h1>
+    <h1>🗣️ Anonymous Voice</h1>
     {#if currentUser}
       <div class="user-info">
         <div class="user-profile">

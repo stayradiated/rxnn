@@ -6,6 +6,9 @@
 app = 'rxnn'
 primary_region = 'syd'
 
+[env]
+  DATABASE_PATH = '/data/platform.db'
+
 [build]
 
 [[mounts]]

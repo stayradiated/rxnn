@@ -69,9 +69,8 @@ if (post.post_type === 'scale' && !pollResponses.scaleValue) {
                 <span class="option-label">
                   {option.label}
                   {#if isUserChoice}
-                    <span class="user-choice-indicator">✓</span>
-                    <button onclick={editResponse} class="inline-edit-btn" title="Edit your response">
-                      ✏️
+                    <button onclick={editResponse} class="radio-checkmark" title="Edit your response">
+                      ✓
                     </button>
                   {/if}
                 </span>
@@ -100,28 +99,32 @@ if (post.post_type === 'scale' && !pollResponses.scaleValue) {
               </div>
             {/if}
 
-            {#each Array.from({length: post.poll_config.max - post.poll_config.min + 1}, (_, i) => post.poll_config.min + i) as value, index (index)}
-              {@const result = pollResults.distribution?.find(r => r.value === value)}
-              {@const percentage = result ? Math.round((result.count / pollResults.totalResponses) * 100) : 0}
-              {@const isUserChoice = userResponse?.scaleValue === value}
-              <div class="poll-result-item" class:user-selected={isUserChoice}>
-                <div class="result-header">
-                  <span class="option-label">
+            <div class="scale-chart">
+              {#each Array.from({length: post.poll_config.max - post.poll_config.min + 1}, (_, i) => post.poll_config.min + i) as value, index (index)}
+                {@const result = pollResults.distribution?.find(r => r.value === value)}
+                {@const count = result?.count || 0}
+                {@const percentage = result ? Math.round((result.count / pollResults.totalResponses) * 100) : 0}
+                {@const isUserChoice = userResponse?.scaleValue === value}
+                {@const maxCount = Math.max(...pollResults.distribution?.map(d => d.count) || [1])}
+                {@const barHeight = maxCount > 0 ? (count / maxCount) * 100 : 0}
+
+                <div class="scale-bar-container" class:user-selected={isUserChoice}>
+                  <div class="scale-bar-wrapper">
+                    <div class="scale-bar" style:height="{barHeight}%">
+                      <div class="bar-count">{count}</div>
+                    </div>
+                  </div>
+                  <div class="scale-value">
                     {value}
                     {#if isUserChoice}
-                      <span class="user-choice-indicator">✓</span>
-                      <button onclick={editResponse} class="inline-edit-btn" title="Edit your response">
-                        ✏️
+                      <button onclick={editResponse} class="scale-checkmark" title="Edit your response">
+                        ✓
                       </button>
                     {/if}
-                  </span>
-                  <span class="result-stats">{result?.count || 0} votes ({percentage}%)</span>
+                  </div>
                 </div>
-                <div class="result-bar">
-                  <div class="result-fill" style:width="{percentage}%"></div>
-                </div>
-              </div>
-            {/each}
+              {/each}
+            </div>
           </div>
         {/if}
 
@@ -429,36 +432,53 @@ if (post.post_type === 'scale' && !pollResponses.scaleValue) {
     font-size: 0.95rem;
   }
 
-  .inline-edit-btn {
-    background: none;
-    border: none;
-    color: var(--color-text-secondary, #6b7280);
-    cursor: pointer;
-    padding: 0.125rem 0.25rem;
-    margin-left: 0.375rem;
-    border-radius: 3px;
-    font-size: 0.75rem;
-    transition: all 0.2s;
-    opacity: 0.7;
-  }
-
-  .inline-edit-btn:hover {
-    background: var(--color-surface-alt, #f3f4f6);
-    color: var(--color-primary, #2563eb);
-    opacity: 1;
-    transform: scale(1.1);
-  }
-
   .user-selected {
     background: var(--color-primary-light, #eff6ff);
     border-color: var(--color-primary, #2563eb);
   }
 
-  .user-choice-indicator {
-    color: var(--color-primary, #2563eb);
+  .radio-checkmark {
+    background: var(--color-primary, #2563eb);
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    font-size: 0.75rem;
     font-weight: 600;
     margin-left: 0.5rem;
-    font-size: 0.85rem;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .radio-checkmark:hover {
+    background: var(--color-primary-dark, #1d4ed8);
+    transform: scale(1.1);
+  }
+
+  .scale-checkmark {
+    background: var(--color-primary, #2563eb);
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-top: 0.25rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .scale-checkmark:hover {
+    background: var(--color-primary-dark, #1d4ed8);
+    transform: scale(1.1);
   }
 
   .scale-labels {
@@ -469,6 +489,79 @@ if (post.post_type === 'scale' && !pollResponses.scaleValue) {
     font-size: 0.85rem;
     color: var(--color-text-secondary, #6b7280);
     font-style: italic;
+  }
+
+  .scale-chart {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin: 1.5rem 0;
+    padding: 1rem 0.5rem 0.5rem;
+    min-height: 120px;
+  }
+
+  .scale-bar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    max-width: 60px;
+    margin: 0 2px;
+  }
+
+  .scale-bar-container.user-selected {
+    background: var(--color-primary-light, #eff6ff);
+    border-radius: 6px;
+    padding: 0.25rem;
+    margin: -0.25rem 2px;
+  }
+
+  .scale-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 80px;
+    width: 100%;
+    margin-bottom: 0.5rem;
+    position: relative;
+  }
+
+  .scale-bar {
+    background: var(--color-primary, #2563eb);
+    border-radius: 4px 4px 0 0;
+    min-height: 4px;
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+
+  .scale-bar-container.user-selected .scale-bar {
+    background: var(--color-primary-dark, #1d4ed8);
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+  }
+
+  .bar-count {
+    position: absolute;
+    top: -1.5rem;
+    color: var(--color-text, #374151);
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .scale-value {
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-text, #374151);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 2.5rem;
   }
 
   @media (max-width: 768px) {
@@ -507,6 +600,29 @@ if (post.post_type === 'scale' && !pollResponses.scaleValue) {
     .slider-value {
       font-size: 0.8rem;
       padding: 0.2rem 0.6rem;
+    }
+
+    .scale-chart {
+      min-height: 100px;
+      margin: 1rem 0;
+    }
+
+    .scale-bar-wrapper {
+      height: 60px;
+    }
+
+    .scale-bar-container {
+      max-width: 50px;
+      margin: 0 1px;
+    }
+
+    .scale-value {
+      font-size: 0.75rem;
+    }
+
+    .bar-count {
+      font-size: 0.7rem;
+      top: -1.25rem;
     }
   }
 </style>

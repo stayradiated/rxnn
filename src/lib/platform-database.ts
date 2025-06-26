@@ -1,4 +1,5 @@
-import { join } from 'node:path'
+import { existsSync, mkdirSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import Database from 'better-sqlite3'
 
 // Database setup and schema
@@ -17,6 +18,13 @@ export function initDatabase() {
   // Use data directory for production, local file for development
   const dbPath = process.env.DATABASE_PATH || join(process.cwd(), 'platform.db')
 
+  // Ensure the directory exists for the database file
+  const dbDir = dirname(dbPath)
+  if (!existsSync(dbDir)) {
+    mkdirSync(dbDir, { recursive: true })
+  }
+
+  console.log(`Initializing database at: ${dbPath}`)
   db = new Database(dbPath)
 
   // Enable WAL mode for better concurrency
