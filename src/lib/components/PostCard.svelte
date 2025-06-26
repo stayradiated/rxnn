@@ -563,6 +563,7 @@ async function deleteComment(commentId: number) {
     color: var(--color-text-secondary);
     margin-bottom: 1rem;
     line-height: 1.6;
+    white-space: pre-wrap;
   }
 
   /* Comments Styles */
@@ -607,6 +608,7 @@ async function deleteComment(commentId: number) {
     line-height: 1.5;
     font-size: 0.95rem;
     margin-bottom: 0.75rem;
+    white-space: pre-wrap;
   }
 
   .comment-actions {

@@ -165,6 +165,7 @@ function submitComment() {
     line-height: 1.5;
     font-size: 0.95rem;
     margin-bottom: 0.75rem;
+    white-space: pre-wrap;
   }
 
   .comment-actions {
