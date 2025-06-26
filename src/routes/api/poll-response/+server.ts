@@ -43,7 +43,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
     // Get updated poll aggregates (no raw data exposed)
     const pollResults = getPollAggregates(postId)
-    
+
     // Only include poll results if there are at least 5 total responses
     const includeResults = pollResults && pollResults.totalResponses >= 5
 

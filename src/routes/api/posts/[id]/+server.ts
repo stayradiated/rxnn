@@ -1,4 +1,5 @@
 import {
+  deletePost,
   getCommentsForPost,
   getPollAggregates,
   getPostById,
@@ -157,5 +158,42 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 
     console.error('Error updating post:', error)
     return json({ error: 'Failed to update post' }, { status: 500 })
+  }
+}
+
+export const DELETE: RequestHandler = async ({ params, locals }) => {
+  try {
+    // Check authentication
+    if (!locals.user) {
+      return json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const user = locals.user
+    const postId = Number.parseInt(params.id)
+
+    // Validate input
+    if (!postId || Number.isNaN(postId)) {
+      return json({ error: 'Invalid post ID' }, { status: 400 })
+    }
+
+    // Delete the post
+    const result = deletePost(postId, user.id)
+
+    console.log('Post deleted by', user.username, 'post ID', postId)
+
+    return json(result)
+  } catch (error) {
+    console.error('Error deleting post:', error)
+
+    if (error instanceof Error) {
+      if (error.message === 'Post not found') {
+        return json({ error: 'Post not found' }, { status: 404 })
+      }
+      if (error.message.includes('Unauthorized')) {
+        return json({ error: 'Unauthorized' }, { status: 403 })
+      }
+    }
+
+    return json({ error: 'Failed to delete post' }, { status: 500 })
   }
 }

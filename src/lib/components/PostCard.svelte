@@ -91,6 +91,34 @@ function editPollResponse() {
   }
 }
 
+// Delete post function
+async function deletePost() {
+  if (
+    !confirm(
+      'Are you sure you want to delete this post? This action cannot be undone.',
+    )
+  ) {
+    return
+  }
+
+  try {
+    const response = await fetch(`/api/posts/${post.id}`, {
+      method: 'DELETE',
+    })
+
+    if (response.ok) {
+      // Redirect to home page after successful deletion
+      goto('/')
+    } else {
+      const data = await response.json()
+      alert(`Failed to delete post: ${data.error || 'Unknown error'}`)
+    }
+  } catch (error) {
+    console.error('Error deleting post:', error)
+    alert('Failed to delete post. Please try again.')
+  }
+}
+
 // Comments functions
 function toggleComments() {
   // Comments are pre-loaded from server, just toggle visibility
@@ -187,13 +215,22 @@ async function submitComment() {
     </div>
 
     {#if currentUser && currentUser.id === post.user_id}
-      <a
-        href="/post/{post.id}/edit"
-        class="edit-button"
-        title="Edit this post">
-        <span class="edit-icon">✏️</span>
-        Edit
-      </a>
+      <div class="post-owner-actions">
+        <a
+          href="/post/{post.id}/edit"
+          class="edit-button"
+          title="Edit this post">
+          <span class="edit-icon">✏️</span>
+          Edit
+        </a>
+        <button
+          onclick={deletePost}
+          class="delete-button"
+          title="Delete this post">
+          <span class="delete-icon">🗑️</span>
+          Delete
+        </button>
+      </div>
     {/if}
   </div>
 
@@ -329,6 +366,12 @@ async function submitComment() {
     margin-left: 0.25rem;
   }
 
+  .post-owner-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
   .edit-button {
     background: var(--color-primary);
     color: white;
@@ -352,7 +395,33 @@ async function submitComment() {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
 
+  .delete-button {
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .delete-button:hover {
+    background: #b91c1c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
   .edit-icon {
+    font-size: 0.9rem;
+  }
+
+  .delete-icon {
     font-size: 0.9rem;
   }
 
@@ -499,7 +568,13 @@ async function submitComment() {
       flex-wrap: wrap;
     }
 
-    .edit-button {
+    .post-owner-actions {
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .edit-button,
+    .delete-button {
       align-self: center;
       font-size: 0.8rem;
       padding: 0.4rem 0.8rem;

@@ -496,6 +496,34 @@ export function updatePost(
   }
 }
 
+export function deletePost(id: number, userId: number) {
+  const db = getDatabase()
+
+  // First check if the post exists and belongs to the user
+  const existingPost = db
+    .prepare('SELECT user_id FROM posts WHERE id = ?')
+    .get(id)
+
+  if (!existingPost) {
+    throw new Error('Post not found')
+  }
+
+  if (existingPost.user_id !== userId) {
+    throw new Error('Unauthorized: You can only delete your own posts')
+  }
+
+  // Delete the post (cascading will handle comments, poll responses, and hearts)
+  const result = db
+    .prepare('DELETE FROM posts WHERE id = ? AND user_id = ?')
+    .run(id, userId)
+
+  if (result.changes === 0) {
+    throw new Error('Failed to delete post')
+  }
+
+  return { success: true }
+}
+
 // Comment operations
 export function createComment(userId: number, postId: number, content: string) {
   const db = getDatabase()
