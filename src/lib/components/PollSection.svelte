@@ -54,18 +54,6 @@ const handleSubmit: SubmitFunction = () => {
 
 // Clear conflicting selections for scale polls
 $effect(() => {
-  // Initialize scaleValue to the middle value if not set
-  if (
-    post.post_type === 'scale' &&
-    post.poll_config?.type === 'scale' &&
-    !pollResponses.scaleValue &&
-    !pollResponses.specialOption
-  ) {
-    const min = post.poll_config.min || 1
-    const max = post.poll_config.max || 5
-    pollResponses.scaleValue = Math.round((min + max) / 2)
-  }
-
   if (post.post_type === 'scale' && pollResponses) {
     // If user selects a special option, clear scale value
     if (pollResponses.specialOption) {
