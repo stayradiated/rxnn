@@ -237,7 +237,7 @@ export function getPostsForFeed(_userId?: number) {
         (SELECT COUNT(*) FROM poll_responses pr WHERE pr.post_id = p.id) as response_count
       FROM posts p
       JOIN users u ON p.user_id = u.id
-      ORDER BY p.sort_order DESC, p.created_at DESC
+      ORDER BY p.sort_order ASC, p.created_at ASC
     `)
     .all()
 
@@ -901,4 +901,19 @@ export function movePostDown(postId: number) {
 // Initialize database on module load in production
 if (process.env.NODE_ENV === 'production') {
   initDatabase()
+}
+
+export const movePost = (postId: number, position: number) => {
+  const db = getDatabase()
+
+  // force update post sort order
+
+  const result = db
+    .prepare('UPDATE posts SET sort_order = ? WHERE id = ?')
+    .run(position, postId)
+  if (result.changes === 0) {
+    throw new Error('Failed to move post')
+  }
+
+  return { success: true }
 }

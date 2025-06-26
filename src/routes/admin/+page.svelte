@@ -65,16 +65,23 @@ function getCommentCount(post: any) {
         <div class="post-actions">
           <div class="action-buttons">
             <div class="reorder-buttons">
-              <form method="POST" action="?/movePostUp&key={adminKey}" use:enhance>
+              <form method="POST" action="?/movePostDown&key={adminKey}" use:enhance>
                 <input type="hidden" name="postId" value={post.id} />
                 <button type="submit" class="move-btn move-up" title="Move post up">
                   ↑
                 </button>
               </form>
-              <form method="POST" action="?/movePostDown&key={adminKey}" use:enhance>
+              <form method="POST" action="?/movePostUp&key={adminKey}" use:enhance>
                 <input type="hidden" name="postId" value={post.id} />
                 <button type="submit" class="move-btn move-down" title="Move post down">
                   ↓
+                </button>
+              </form>
+              <form method="POST" action="?/movePost&key={adminKey}" use:enhance>
+                <input type="hidden" name="postId" value={post.id} />
+                <input type="number" name="position" value={post.sort_order} />
+                <button type="submit" class="move-btn" title="Set post position">
+                  Set Position
                 </button>
               </form>
             </div>
