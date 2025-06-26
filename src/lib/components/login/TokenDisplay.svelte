@@ -17,8 +17,8 @@ function copyToken() {
   <p>Your account has been created. Here's your secret token:</p>
 
   <div class="important-notice">
-    <h3>⚠️ Important - Save This Token!</h3>
-    <p>This is your only way to access your account from other devices. Copy it somewhere safe!</p>
+    <h3>⚠️ Important!</h3>
+    <p>This token is the only way to get back into your account. Copy it somewhere safe!</p>
   </div>
 
   <div class="token-card">

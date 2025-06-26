@@ -15,6 +15,7 @@ interface Props {
   pollResults?: any
   userResponse?: any
   showPollResults?: boolean
+  editingPollResponse?: boolean
   // Comments state for this post
   showComments?: boolean
   postComments?: any[]
@@ -35,6 +36,7 @@ let {
   pollResults = $bindable(post.pollResults || null),
   userResponse = $bindable(post.userResponse || null),
   showPollResults = $bindable(!!post.pollResults),
+  editingPollResponse = $bindable(false),
   showComments = $bindable(false),
   postComments = $bindable(post.comments || []),
   newComment = $bindable(''),
@@ -58,6 +60,7 @@ async function submitPollResponse(responseData: any) {
       const data = await response.json()
       userResponse = responseData
       pollResponses = {} // Clear form
+      editingPollResponse = false // Exit edit mode
 
       // Only show results if they were returned (minimum threshold met)
       if (data.pollResults) {
@@ -79,6 +82,7 @@ async function submitPollResponse(responseData: any) {
 }
 
 function editPollResponse() {
+  editingPollResponse = true
   showPollResults = false
 
   // Populate form with current response
@@ -148,6 +152,7 @@ async function submitComment() {
     {pollResults}
     {userResponse}
     showResults={showPollResults}
+    editing={editingPollResponse}
     onSubmitResponse={submitPollResponse}
     onEditResponse={editPollResponse}
   />

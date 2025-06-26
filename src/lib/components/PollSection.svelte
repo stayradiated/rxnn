@@ -5,6 +5,7 @@ interface Props {
   pollResults?: any
   userResponse?: any
   showResults?: boolean
+  editing?: boolean
   onSubmitResponse: (responseData: any) => void
   onEditResponse: () => void
 }
@@ -15,6 +16,7 @@ let {
   pollResults = null,
   userResponse = null,
   showResults = false,
+  editing = false,
   onSubmitResponse,
   onEditResponse,
 }: Props = $props()
@@ -172,7 +174,7 @@ $effect(() => {
         {/if}
 
       </div>
-    {:else if userResponse && !pollResults}
+    {:else if userResponse && !pollResults && !editing}
       <!-- User has responded but results are hidden -->
       <div class="poll-pending">
         <div class="pending-message">
