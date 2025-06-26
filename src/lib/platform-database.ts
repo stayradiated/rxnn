@@ -58,6 +58,7 @@ function createTables() {
       content TEXT,
       post_type TEXT NOT NULL,
       poll_config TEXT,
+      sort_order INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     )
@@ -113,11 +114,19 @@ function createTables() {
     )
   `)
 
+  // Add sort_order column to existing posts if it doesn't exist
+  try {
+    db.exec('ALTER TABLE posts ADD COLUMN sort_order INTEGER DEFAULT 0')
+  } catch {
+    // Column already exists, ignore error
+  }
+
   // Create indexes for better performance
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_users_token ON users (token);
     CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
     CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts (created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_posts_sort_order ON posts (sort_order DESC, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts (user_id);
     CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments (post_id);
     CREATE INDEX IF NOT EXISTS idx_comments_user_id ON comments (user_id);
@@ -193,13 +202,25 @@ export function createPost(
 
   const configJson = pollConfig ? JSON.stringify(pollConfig) : null
 
+  // Get current max sort_order and increment by 1 for new posts
+  const maxSortOrder = db
+    .prepare('SELECT COALESCE(MAX(sort_order), 0) as max_order FROM posts')
+    .get() as { max_order: number }
+
   const result = db
     .prepare(`
-      INSERT INTO posts (user_id, title, content, post_type, poll_config)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO posts (user_id, title, content, post_type, poll_config, sort_order)
+      VALUES (?, ?, ?, ?, ?, ?)
       RETURNING *
     `)
-    .get(userId, title, content, postType, configJson)
+    .get(
+      userId,
+      title,
+      content,
+      postType,
+      configJson,
+      maxSortOrder.max_order + 1,
+    )
 
   return result
 }
@@ -216,7 +237,7 @@ export function getPostsForFeed(_userId?: number) {
         (SELECT COUNT(*) FROM poll_responses pr WHERE pr.post_id = p.id) as response_count
       FROM posts p
       JOIN users u ON p.user_id = u.id
-      ORDER BY p.created_at DESC
+      ORDER BY p.sort_order DESC, p.created_at DESC
     `)
     .all()
 
@@ -238,7 +259,7 @@ export function getPostsForFeedWithDetails(userId?: number) {
         (SELECT COUNT(*) FROM poll_responses pr WHERE pr.post_id = p.id) as response_count
       FROM posts p
       JOIN users u ON p.user_id = u.id
-      ORDER BY p.created_at DESC
+      ORDER BY p.sort_order DESC, p.created_at DESC
     `)
     .all()
 
@@ -790,6 +811,91 @@ export function getHeartsForComments(commentIds: number[], userId?: number) {
   }
 
   return result
+}
+
+// Post reordering functions for admin
+export function movePostUp(postId: number) {
+  const db = getDatabase()
+
+  // Get current post and its sort_order
+  const currentPost = db
+    .prepare('SELECT id, sort_order FROM posts WHERE id = ?')
+    .get(postId) as { id: number; sort_order: number } | undefined
+
+  if (!currentPost) {
+    throw new Error('Post not found')
+  }
+
+  // Get the post directly above this one (higher sort_order)
+  const higherPost = db
+    .prepare(`
+      SELECT id, sort_order FROM posts 
+      WHERE sort_order > ? 
+      ORDER BY sort_order ASC 
+      LIMIT 1
+    `)
+    .get(currentPost.sort_order) as
+    | { id: number; sort_order: number }
+    | undefined
+
+  if (!higherPost) {
+    // Already at top
+    return { success: false, message: 'Post is already at the top' }
+  }
+
+  // Swap sort_orders
+  db.prepare('UPDATE posts SET sort_order = ? WHERE id = ?').run(
+    higherPost.sort_order,
+    currentPost.id,
+  )
+  db.prepare('UPDATE posts SET sort_order = ? WHERE id = ?').run(
+    currentPost.sort_order,
+    higherPost.id,
+  )
+
+  return { success: true }
+}
+
+export function movePostDown(postId: number) {
+  const db = getDatabase()
+
+  // Get current post and its sort_order
+  const currentPost = db
+    .prepare('SELECT id, sort_order FROM posts WHERE id = ?')
+    .get(postId) as { id: number; sort_order: number } | undefined
+
+  if (!currentPost) {
+    throw new Error('Post not found')
+  }
+
+  // Get the post directly below this one (lower sort_order)
+  const lowerPost = db
+    .prepare(`
+      SELECT id, sort_order FROM posts 
+      WHERE sort_order < ? 
+      ORDER BY sort_order DESC 
+      LIMIT 1
+    `)
+    .get(currentPost.sort_order) as
+    | { id: number; sort_order: number }
+    | undefined
+
+  if (!lowerPost) {
+    // Already at bottom
+    return { success: false, message: 'Post is already at the bottom' }
+  }
+
+  // Swap sort_orders
+  db.prepare('UPDATE posts SET sort_order = ? WHERE id = ?').run(
+    lowerPost.sort_order,
+    currentPost.id,
+  )
+  db.prepare('UPDATE posts SET sort_order = ? WHERE id = ?').run(
+    currentPost.sort_order,
+    lowerPost.id,
+  )
+
+  return { success: true }
 }
 
 // Initialize database on module load in production

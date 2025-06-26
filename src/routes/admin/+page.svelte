@@ -63,12 +63,28 @@ function getCommentCount(post: any) {
         {/if}
 
         <div class="post-actions">
-          <form method="POST" action="?/deletePost&key={adminKey}" use:enhance>
-            <input type="hidden" name="postId" value={post.id} />
-            <button type="submit" class="delete-btn" on:click={(e) => { if (!confirm('Are you sure you want to delete this post?')) e.preventDefault() }}>
-              Delete Post
-            </button>
-          </form>
+          <div class="action-buttons">
+            <div class="reorder-buttons">
+              <form method="POST" action="?/movePostUp&key={adminKey}" use:enhance>
+                <input type="hidden" name="postId" value={post.id} />
+                <button type="submit" class="move-btn move-up" title="Move post up">
+                  ↑
+                </button>
+              </form>
+              <form method="POST" action="?/movePostDown&key={adminKey}" use:enhance>
+                <input type="hidden" name="postId" value={post.id} />
+                <button type="submit" class="move-btn move-down" title="Move post down">
+                  ↓
+                </button>
+              </form>
+            </div>
+            <form method="POST" action="?/deletePost&key={adminKey}" use:enhance>
+              <input type="hidden" name="postId" value={post.id} />
+              <button type="submit" class="delete-btn" on:click={(e) => { if (!confirm('Are you sure you want to delete this post?')) e.preventDefault() }}>
+                Delete Post
+              </button>
+            </form>
+          </div>
         </div>
 
         {#if post.comments && post.comments.length > 0}
@@ -185,6 +201,42 @@ function getCommentCount(post: any) {
     margin-top: 15px;
     padding-top: 15px;
     border-top: 1px solid #eee;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+  }
+
+  .reorder-buttons {
+    display: flex;
+    gap: 5px;
+  }
+
+  .move-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    min-width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .move-btn:hover {
+    background: #2980b9;
+  }
+
+  .move-btn:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
   }
 
   .delete-btn {
