@@ -43,15 +43,13 @@ export const actions: Actions = {
     }
 
     // Create the post
-    const post = createPost({
+    createPost({
       user_id: locals.user.id,
       title,
       content: content || null,
       post_type: postType,
       poll_config: pollConfig,
     })
-
-    console.log('Created poll post:', post.id, 'by', locals.user.username)
 
     // Redirect to feed after successful creation
     redirect(303, '/feed')

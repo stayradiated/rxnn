@@ -100,14 +100,6 @@ export const actions: Actions = {
     // Only include poll results if there are at least 5 total responses
     const includeResults = pollResults && pollResults.totalResponses >= 5
 
-    console.log(
-      'Poll response submitted by',
-      locals.user.username,
-      'for post',
-      postId,
-      submissionResult.isNewResponse ? '(new)' : '(edit)',
-    )
-
     return {
       success: true,
       pollResults: includeResults ? pollResults : null,
@@ -132,8 +124,6 @@ export const actions: Actions = {
     // Create the comment
     const comment = createComment(locals.user.id, postId, content)
 
-    console.log('Comment created by', locals.user.username, 'on post', postId)
-
     return {
       success: true,
       comment: {
@@ -154,16 +144,6 @@ export const actions: Actions = {
     // Toggle the heart
     const result = toggleHeart(locals.user.id, targetType, targetId)
 
-    console.log(
-      'Heart toggled by',
-      locals.user.username,
-      'for',
-      targetType,
-      targetId,
-      '- hearted:',
-      result.hearted,
-    )
-
     return {
       success: true,
       hearted: result.hearted,
@@ -180,13 +160,6 @@ export const actions: Actions = {
 
     // Update the comment
     const updatedComment = updateComment(commentId, locals.user.id, content)
-
-    console.log(
-      'Comment updated by',
-      locals.user.username,
-      'comment ID',
-      commentId,
-    )
 
     return {
       success: true,
@@ -208,13 +181,6 @@ export const actions: Actions = {
     // Delete the comment
     const result = deleteComment(commentId, locals.user.id)
 
-    console.log(
-      'Comment deleted by',
-      locals.user.username,
-      'comment ID',
-      commentId,
-    )
-
     return result
   },
 
@@ -222,7 +188,6 @@ export const actions: Actions = {
     if (locals.session) {
       // Invalidate the session
       invalidateSession(locals.session.id)
-      console.log('Session invalidated for user:', locals.user?.username)
     }
 
     // Redirect to login page after logout
@@ -239,8 +204,6 @@ export const actions: Actions = {
 
     // Delete the post
     deletePost(postId, locals.user.id)
-
-    console.log('Post deleted by', locals.user.username, 'post ID', postId)
 
     // Redirect to feed after successful deletion
     redirect(303, '/feed')

@@ -72,8 +72,6 @@ export const actions: Actions = {
     // Set session cookie
     setSessionTokenCookie(event, sessionToken, session.expiresAt)
 
-    console.log('Created new user:', username)
-
     return {
       success: true,
       token,
@@ -99,8 +97,6 @@ export const actions: Actions = {
     const sessionToken = generateSessionToken()
     const session = createSession(sessionToken, user.id)
     setSessionTokenCookie(event, sessionToken, session.expiresAt)
-
-    console.log('User verified via token:', user.username)
 
     // Redirect to feed after successful login
     redirect(303, '/feed')

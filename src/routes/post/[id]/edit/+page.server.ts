@@ -78,8 +78,6 @@ export const actions: Actions = {
       pollConfig,
     )
 
-    console.log('Post updated by', locals.user.username, 'for post', postId)
-
     // Redirect to feed after successful update
     redirect(303, '/feed')
   },
