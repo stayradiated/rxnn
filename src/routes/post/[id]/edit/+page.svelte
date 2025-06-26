@@ -38,7 +38,7 @@ onMount(() => {
     const config = data.post.poll_config
 
     if (postType === 'radio' && config.type === 'radio') {
-      radioOptions = config.options.map((opt: any) => opt.label)
+      radioOptions = config.options.map((opt) => opt.label)
     } else if (postType === 'scale' && config.type === 'scale') {
       scaleMin = config.min
       scaleMax = config.max

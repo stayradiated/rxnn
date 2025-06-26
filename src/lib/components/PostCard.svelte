@@ -1,6 +1,6 @@
 <script lang="ts">
 import { enhance } from '$app/forms'
-import type { PostWithDetails } from '$lib/types.js'
+import type { CommentWithDetails, PostWithDetails } from '$lib/types.js'
 import type { SubmitFunction } from '@sveltejs/kit'
 import HeartButton from './HeartButton.svelte'
 import PollSection from './PollSection.svelte'
@@ -21,7 +21,7 @@ const userHearted = $derived(post.userHearted || false)
 let showComments = $state(false)
 let newComment = $state('')
 let commentSubmitting = $state(false)
-let editingCommentId = $state(null)
+let editingCommentId = $state<number | null>(null)
 let editingCommentContent = $state('')
 
 // Delete post function
@@ -52,7 +52,7 @@ function toggleComments() {
 }
 
 // Comment edit/delete functions
-function startEditingComment(comment: any) {
+function startEditingComment(comment: CommentWithDetails) {
   editingCommentId = comment.id
   editingCommentContent = comment.content
 }

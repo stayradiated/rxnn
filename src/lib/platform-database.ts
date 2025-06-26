@@ -147,14 +147,18 @@ export function createUser(token: string, username: string): User {
   const db = getDatabase()
 
   const result = db
-    .prepare(`
+    .prepare<[string, string], User>(`
       INSERT INTO users (token, username)
       VALUES (?, ?)
       RETURNING *
     `)
     .get(token, username)
 
-  return result as User
+  if (!result) {
+    throw new Error('Failed to create user')
+  }
+
+  return result
 }
 
 export function findUserByToken(token: string): User | undefined {
@@ -208,7 +212,11 @@ export function createPost(
         max_order: number
       }
     >('SELECT COALESCE(MAX(sort_order), 0) as max_order FROM posts')
-    .get() as { max_order: number }
+    .get()
+
+  if (!maxSortOrder) {
+    throw new Error('Failed to retrieve max sort order')
+  }
 
   const result = db
     .prepare<
@@ -281,17 +289,17 @@ export function getPostsForFeedWithDetails(userId: number): PostWithDetails[] {
     `)
     .all()
 
-  const postIds = posts.map((post: any) => post.id)
+  const postIds = posts.map((post) => post.id)
   const postHearts = getHeartsForPosts(postIds, userId)
 
   return posts.map((post) => {
     // Get comments for this post
     const comments = getCommentsForPost(post.id)
-    const commentIds = comments.map((comment: any) => comment.id)
+    const commentIds = comments.map((comment) => comment.id)
     const commentHearts = getHeartsForComments(commentIds, userId)
 
     // Add heart data to comments
-    const commentsWithDetails = comments.map((comment: any) => ({
+    const commentsWithDetails = comments.map((comment) => ({
       ...comment,
       heartCount: commentHearts[comment.id]?.count || 0,
       userHearted: commentHearts[comment.id]?.userHearted || false,
@@ -348,7 +356,7 @@ export function getPollAggregates(postId: number): PollAggregates | null {
     .prepare<
       [number],
       {
-        response_data: ResponseData
+        response_data: string
       }
     >(`
       SELECT response_data
@@ -358,18 +366,20 @@ export function getPollAggregates(postId: number): PollAggregates | null {
     .all(postId)
 
   const totalResponses = responses.length
-  const responseData = responses.map((r: any) => JSON.parse(r.response_data))
+  const responseData = responses.map(
+    (r) => JSON.parse(r.response_data) as ResponseData,
+  )
 
   if (post.post_type === 'radio' && pollConfig.type === 'radio') {
     // For radio polls, count votes for each option
     const optionCounts: { [key: string]: number } = {}
     const specialCounts = { prefer_not_to_say: 0, not_applicable: 0 }
 
-    pollConfig.options.forEach((option: any) => {
+    pollConfig.options.forEach((option) => {
       optionCounts[option.id] = 0
     })
 
-    responseData.forEach((data: any) => {
+    responseData.forEach((data) => {
       if (
         data.selectedOption &&
         Object.hasOwn(optionCounts, data.selectedOption)
@@ -385,7 +395,7 @@ export function getPollAggregates(postId: number): PollAggregates | null {
     return {
       totalResponses,
       type: 'radio',
-      options: pollConfig.options.map((option: any) => ({
+      options: pollConfig.options.map((option) => ({
         option_id: option.id,
         label: option.label,
         count: optionCounts[option.id] || 0,
@@ -403,13 +413,13 @@ export function getPollAggregates(postId: number): PollAggregates | null {
   if (post.post_type === 'scale' && pollConfig.type === 'scale') {
     // For scale polls, calculate statistics
     const values = responseData
-      .map((data: any) => data.scaleValue)
-      .filter((val: any) => typeof val === 'number')
+      .map((data) => data.scaleValue)
+      .filter((val): val is number => typeof val === 'number')
 
     const specialCounts = { prefer_not_to_say: 0, not_applicable: 0 }
 
     // Count special options
-    responseData.forEach((data: any) => {
+    responseData.forEach((data) => {
       if (data.specialOption === 'prefer_not_to_say') {
         specialCounts.prefer_not_to_say++
       } else if (data.specialOption === 'not_applicable') {
@@ -829,7 +839,13 @@ export function getHeartsForPosts(postIds: number[], userId?: number) {
 
   // Get heart counts for all posts
   const counts = db
-    .prepare(`
+    .prepare<
+      number[],
+      {
+        target_id: number
+        count: number
+      }
+    >(`
       SELECT target_id, COUNT(*) as count
       FROM hearts
       WHERE target_type = 'post' AND target_id IN (${placeholders})
@@ -846,21 +862,26 @@ export function getHeartsForPosts(postIds: number[], userId?: number) {
   })
 
   // Set actual counts
-  counts.forEach((row: any) => {
+  counts.forEach((row) => {
     result[row.target_id].count = row.count
   })
 
   // Get user hearts if userId provided
   if (userId) {
     const userHearts = db
-      .prepare(`
+      .prepare<
+        [...number[], number],
+        {
+          target_id: number
+        }
+      >(`
         SELECT target_id
         FROM hearts
         WHERE target_type = 'post' AND target_id IN (${placeholders}) AND user_id = ?
       `)
       .all(...postIds, userId)
 
-    userHearts.forEach((row: any) => {
+    userHearts.forEach((row) => {
       result[row.target_id].userHearted = true
     })
   }
@@ -876,7 +897,13 @@ export function getHeartsForComments(commentIds: number[], userId?: number) {
 
   // Get heart counts for all comments
   const counts = db
-    .prepare(`
+    .prepare<
+      number[],
+      {
+        target_id: number
+        count: number
+      }
+    >(`
       SELECT target_id, COUNT(*) as count
       FROM hearts
       WHERE target_type = 'comment' AND target_id IN (${placeholders})
@@ -894,21 +921,26 @@ export function getHeartsForComments(commentIds: number[], userId?: number) {
   })
 
   // Set actual counts
-  counts.forEach((row: any) => {
+  counts.forEach((row) => {
     result[row.target_id].count = row.count
   })
 
   // Get user hearts if userId provided
   if (userId) {
     const userHearts = db
-      .prepare(`
+      .prepare<
+        [...number[], number],
+        {
+          target_id: number
+        }
+      >(`
         SELECT target_id
         FROM hearts
         WHERE target_type = 'comment' AND target_id IN (${placeholders}) AND user_id = ?
       `)
       .all(...commentIds, userId)
 
-    userHearts.forEach((row: any) => {
+    userHearts.forEach((row) => {
       result[row.target_id].userHearted = true
     })
   }
@@ -922,7 +954,12 @@ export function getPlatformStats(userId?: number) {
   // Get active users (all users who have posted, commented, or responded to polls)
   // Note: Timestamp columns removed for privacy - showing all users with activity
   const activeUsers = db
-    .prepare(`
+    .prepare<
+      [],
+      {
+        count: number
+      }
+    >(`
       SELECT COUNT(DISTINCT user_id) as count FROM (
         SELECT user_id FROM posts
         UNION
@@ -931,34 +968,65 @@ export function getPlatformStats(userId?: number) {
         SELECT user_id FROM poll_responses
       )
     `)
-    .get() as { count: number }
+    .get()
+
+  if (!activeUsers) {
+    throw new Error('Failed to retrieve active user count')
+  }
 
   // Get total questions (posts that are not text-only)
   const totalQuestions = db
-    .prepare('SELECT COUNT(*) as count FROM posts WHERE post_type != ?')
-    .get('text') as { count: number }
+    .prepare<
+      [PostType],
+      {
+        count: number
+      }
+    >('SELECT COUNT(*) as count FROM posts WHERE post_type != ?')
+    .get('text')
+
+  if (!totalQuestions) {
+    throw new Error('Failed to retrieve total question count')
+  }
 
   // Get unanswered questions for the specific user (questions they haven't responded to)
   let unansweredQuestions = 0
   let userHasAnsweredQuestions = false
   if (userId) {
     const unanswered = db
-      .prepare(`
+      .prepare<
+        [number],
+        {
+          count: number
+        }
+      >(`
         SELECT COUNT(*) as count FROM posts
         WHERE post_type != 'text'
         AND id NOT IN (
           SELECT DISTINCT post_id FROM poll_responses WHERE user_id = ?
         )
       `)
-      .get(userId) as { count: number }
+      .get(userId)
+
+    if (!unanswered) {
+      throw new Error('Failed to retrieve unanswered question count')
+    }
     unansweredQuestions = unanswered.count
 
     // Check if user has answered at least one question
     const answeredCount = db
-      .prepare(`
+      .prepare<
+        [number],
+        {
+          count: number
+        }
+      >(`
         SELECT COUNT(DISTINCT post_id) as count FROM poll_responses WHERE user_id = ?
       `)
-      .get(userId) as { count: number }
+      .get(userId)
+    if (!answeredCount) {
+      throw new Error('Failed to retrieve answered question count')
+    }
+
     userHasAnsweredQuestions = answeredCount.count > 0
   }
 

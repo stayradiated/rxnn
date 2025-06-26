@@ -48,21 +48,31 @@ export function createSession(token: string, userId: number): Session {
   return session
 }
 
+type SessionRowResult =
+  | {
+      id: string
+      user_id: number
+      expires_at: number
+      token: string
+      username: string
+    }
+  | undefined
+
 export function validateSessionToken(token: string): SessionValidationResult {
   const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)))
   const db = getDatabase()
 
   const row = db
-    .prepare(`
+    .prepare<[string], SessionRowResult>(`
     SELECT session.id, session.user_id, session.expires_at, 
            users.id as user_id, users.token, users.username
     FROM session 
     INNER JOIN users ON users.id = session.user_id 
     WHERE session.id = ?
   `)
-    .get(sessionId) as any
+    .get(sessionId)
 
-  if (row === undefined) {
+  if (!row) {
     return { session: null, user: null }
   }
 

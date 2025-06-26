@@ -1,9 +1,10 @@
 <script lang="ts">
 import { dev } from '$app/environment'
 import { goto } from '$app/navigation'
+import type { User } from '$lib/types.js'
 
 interface Props {
-  currentUser?: any
+  currentUser?: User | null
   onLogout: () => void
 }
 
@@ -30,6 +31,8 @@ function hideToken() {
 }
 
 async function copyToken() {
+  if (!currentUser?.token) return
+
   try {
     await navigator.clipboard.writeText(currentUser.token)
     copySuccess = true
@@ -83,7 +86,7 @@ async function copyToken() {
           Keep it safe and don't share it with others.
         </p>
         <div class="token-display">
-          <code class="token-text">{currentUser.token}</code>
+          <code class="token-text">{currentUser?.token || ''}</code>
           <button class="copy-btn" onclick={copyToken}>
             {copySuccess ? '✓ Copied!' : '📋 Copy'}
           </button>
