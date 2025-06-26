@@ -63,9 +63,18 @@ if (post.post_type === 'scale' && !pollResponses.scaleValue) {
           {#each post.poll_config.options as option (option.id)}
             {@const result = pollResults.options?.find(r => r.option_id === option.id)}
             {@const percentage = result ? Math.round((result.count / pollResults.totalResponses) * 100) : 0}
-            <div class="poll-result-item">
+            {@const isUserChoice = userResponse?.selectedOption === option.id}
+            <div class="poll-result-item" class:user-selected={isUserChoice}>
               <div class="result-header">
-                <span class="option-label">{option.label}</span>
+                <span class="option-label">
+                  {option.label}
+                  {#if isUserChoice}
+                    <span class="user-choice-indicator">✓</span>
+                    <button onclick={editResponse} class="inline-edit-btn" title="Edit your response">
+                      ✏️
+                    </button>
+                  {/if}
+                </span>
                 <span class="result-stats">{result?.count || 0} votes ({percentage}%)</span>
               </div>
               <div class="result-bar">
@@ -79,12 +88,33 @@ if (post.post_type === 'scale' && !pollResponses.scaleValue) {
               <span>Average: {pollResults.average?.toFixed(1) || 'N/A'}</span>
               <span>Total responses: {pollResults.totalResponses || 0}</span>
             </div>
+
+            {#if post.poll_config.minLabel || post.poll_config.maxLabel}
+              <div class="scale-labels">
+                {#if post.poll_config.minLabel}
+                  <span class="scale-label">{post.poll_config.minLabel}</span>
+                {/if}
+                {#if post.poll_config.maxLabel}
+                  <span class="scale-label">{post.poll_config.maxLabel}</span>
+                {/if}
+              </div>
+            {/if}
+
             {#each Array.from({length: post.poll_config.max - post.poll_config.min + 1}, (_, i) => post.poll_config.min + i) as value, index (index)}
               {@const result = pollResults.distribution?.find(r => r.value === value)}
               {@const percentage = result ? Math.round((result.count / pollResults.totalResponses) * 100) : 0}
-              <div class="poll-result-item">
+              {@const isUserChoice = userResponse?.scaleValue === value}
+              <div class="poll-result-item" class:user-selected={isUserChoice}>
                 <div class="result-header">
-                  <span class="option-label">{value}</span>
+                  <span class="option-label">
+                    {value}
+                    {#if isUserChoice}
+                      <span class="user-choice-indicator">✓</span>
+                      <button onclick={editResponse} class="inline-edit-btn" title="Edit your response">
+                        ✏️
+                      </button>
+                    {/if}
+                  </span>
                   <span class="result-stats">{result?.count || 0} votes ({percentage}%)</span>
                 </div>
                 <div class="result-bar">
@@ -95,19 +125,6 @@ if (post.post_type === 'scale' && !pollResponses.scaleValue) {
           </div>
         {/if}
 
-        {#if userResponse}
-          <div class="user-response">
-            <strong>Your response:</strong>
-            {#if post.post_type === 'radio'}
-              {post.poll_config.options.find(opt => opt.id === userResponse.selectedOption)?.label}
-            {:else if post.post_type === 'scale'}
-              {userResponse.scaleValue}
-            {/if}
-            <button onclick={editResponse} class="btn-edit">
-              Edit Response
-            </button>
-          </div>
-        {/if}
       </div>
     {:else}
       <!-- Show Poll Form -->
@@ -412,28 +429,46 @@ if (post.post_type === 'scale' && !pollResponses.scaleValue) {
     font-size: 0.95rem;
   }
 
-  .user-response {
-    margin-top: 1rem;
-    padding: 1rem;
-    background: var(--color-warning-light, #fef3c7);
-    border: 1px solid var(--color-warning, #fbbf24);
-    border-radius: 6px;
-    color: var(--color-warning-dark, #92400e);
-  }
-
-  .btn-edit {
-    background: var(--color-warning, #f59e0b);
-    color: var(--color-text-inverse, white);
+  .inline-edit-btn {
+    background: none;
     border: none;
-    border-radius: 4px;
-    padding: 0.25rem 0.75rem;
-    margin-left: 1rem;
+    color: var(--color-text-secondary, #6b7280);
     cursor: pointer;
-    font-size: 0.8rem;
+    padding: 0.125rem 0.25rem;
+    margin-left: 0.375rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+    opacity: 0.7;
   }
 
-  .btn-edit:hover {
-    background: var(--color-warning-dark, #d97706);
+  .inline-edit-btn:hover {
+    background: var(--color-surface-alt, #f3f4f6);
+    color: var(--color-primary, #2563eb);
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+  .user-selected {
+    background: var(--color-primary-light, #eff6ff);
+    border-color: var(--color-primary, #2563eb);
+  }
+
+  .user-choice-indicator {
+    color: var(--color-primary, #2563eb);
+    font-weight: 600;
+    margin-left: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .scale-labels {
+    display: flex;
+    justify-content: space-between;
+    margin: 1rem 0;
+    padding: 0 0.5rem;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary, #6b7280);
+    font-style: italic;
   }
 
   @media (max-width: 768px) {
