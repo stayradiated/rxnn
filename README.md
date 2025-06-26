@@ -33,7 +33,7 @@ A privacy-focused anonymous social platform where users can share thoughts, crea
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/stayradiated/rxnn.git
 cd rxnn
 
 # Install dependencies
@@ -129,7 +129,7 @@ The application is configured for deployment on Fly.io:
 
 ## License
 
-Private repository - see license terms with the repository owner.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
