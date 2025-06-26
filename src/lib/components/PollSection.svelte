@@ -23,8 +23,12 @@ function submitResponse() {
   const response = pollResponses
   if (post.post_type === 'radio' && response?.selectedOption) {
     onSubmitResponse({ selectedOption: response.selectedOption })
-  } else if (post.post_type === 'scale' && response?.scaleValue) {
-    onSubmitResponse({ scaleValue: response.scaleValue })
+  } else if (post.post_type === 'scale') {
+    if (response?.specialOption) {
+      onSubmitResponse({ specialOption: response.specialOption })
+    } else if (response?.scaleValue) {
+      onSubmitResponse({ scaleValue: response.scaleValue })
+    }
   }
 }
 
@@ -37,7 +41,7 @@ function isSubmitDisabled() {
     return !pollResponses?.selectedOption
   }
   if (post.post_type === 'scale') {
-    return !pollResponses?.scaleValue
+    return !pollResponses?.scaleValue && !pollResponses?.specialOption
   }
   return true
 }
@@ -48,9 +52,27 @@ if (!pollResponses) {
 }
 
 // Initialize scaleValue to the minimum value if not set
-if (post.post_type === 'scale' && !pollResponses.scaleValue) {
+if (
+  post.post_type === 'scale' &&
+  !pollResponses.scaleValue &&
+  !pollResponses.specialOption
+) {
   pollResponses.scaleValue = post.poll_config?.min || 1
 }
+
+// Clear conflicting selections for scale polls
+$effect(() => {
+  if (post.post_type === 'scale' && pollResponses) {
+    // If user selects a special option, clear scale value
+    if (pollResponses.specialOption) {
+      pollResponses.scaleValue = undefined
+    }
+    // If user changes scale value, clear special option
+    else if (pollResponses.scaleValue) {
+      pollResponses.specialOption = undefined
+    }
+  }
+})
 </script>
 
 {#if post.post_type !== 'text'}
@@ -128,6 +150,27 @@ if (post.post_type === 'scale' && !pollResponses.scaleValue) {
           </div>
         {/if}
 
+        <!-- Special Options Stats -->
+        {#if pollResults.specialOptions}
+          <div class="special-stats">
+            {#each pollResults.specialOptions as option}
+              {#if option.count > 0}
+                <div class="special-stat">
+                  <span class="special-label">
+                    {option.type === 'prefer_not_to_say' ? 'Prefer Not To Say' : 'Not Applicable'}
+                    {#if userResponse?.specialOption === option.type || userResponse?.selectedOption === option.type}
+                      <button onclick={editResponse} class="radio-checkmark" title="Edit your response">
+                        ✓
+                      </button>
+                    {/if}
+                  </span>
+                  <span class="special-count">{option.count}</span>
+                </div>
+              {/if}
+            {/each}
+          </div>
+        {/if}
+
       </div>
     {:else}
       <!-- Show Poll Form -->
@@ -145,6 +188,28 @@ if (post.post_type === 'scale' && !pollResponses.scaleValue) {
                 <span class="option-text">{option.label}</span>
               </label>
             {/each}
+
+            <!-- Special options -->
+            <div class="special-options">
+              <label class="poll-option special-option">
+                <input
+                  type="radio"
+                  bind:group={pollResponses.selectedOption}
+                  value="prefer_not_to_say"
+                  name="poll-{post.id}"
+                />
+                <span class="option-text">Prefer Not To Say</span>
+              </label>
+              <label class="poll-option special-option">
+                <input
+                  type="radio"
+                  bind:group={pollResponses.selectedOption}
+                  value="not_applicable"
+                  name="poll-{post.id}"
+                />
+                <span class="option-text">Not Applicable</span>
+              </label>
+            </div>
           </div>
         {:else if post.post_type === 'scale' && post.poll_config}
           <div class="scale-poll">
@@ -175,6 +240,28 @@ if (post.post_type === 'scale' && !pollResponses.scaleValue) {
                   <span class="tick-mark">{value}</span>
                 {/each}
               </div>
+            </div>
+
+            <!-- Special options for scale -->
+            <div class="special-options">
+              <label class="poll-option special-option">
+                <input
+                  type="radio"
+                  bind:group={pollResponses.specialOption}
+                  value="prefer_not_to_say"
+                  name="poll-special-{post.id}"
+                />
+                <span class="option-text">Prefer Not To Say</span>
+              </label>
+              <label class="poll-option special-option">
+                <input
+                  type="radio"
+                  bind:group={pollResponses.specialOption}
+                  value="not_applicable"
+                  name="poll-special-{post.id}"
+                />
+                <span class="option-text">Not Applicable</span>
+              </label>
             </div>
           </div>
         {/if}
@@ -489,6 +576,46 @@ if (post.post_type === 'scale' && !pollResponses.scaleValue) {
     font-size: 0.85rem;
     color: var(--color-text-secondary, #6b7280);
     font-style: italic;
+  }
+
+  .special-options {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border, #e5e7eb);
+  }
+
+  .special-option {
+    background: var(--color-surface-alt, #f9fafb);
+    border-color: var(--color-border-light, #f3f4f6);
+  }
+
+  .special-stats {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border, #e5e7eb);
+  }
+
+  .special-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+    background: var(--color-surface-alt, #f9fafb);
+    border-radius: 4px;
+    font-size: 0.85rem;
+  }
+
+  .special-label {
+    color: var(--color-text-secondary, #6b7280);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .special-count {
+    color: var(--color-text, #374151);
+    font-weight: 500;
   }
 
   .scale-chart {

@@ -310,6 +310,7 @@ export function getPollAggregates(postId: number) {
   if (post.post_type === 'radio') {
     // For radio polls, count votes for each option
     const optionCounts: { [key: string]: number } = {}
+    const specialCounts = { prefer_not_to_say: 0, not_applicable: 0 }
 
     pollConfig.options.forEach((option: any) => {
       optionCounts[option.id] = 0
@@ -321,6 +322,10 @@ export function getPollAggregates(postId: number) {
         Object.hasOwn(optionCounts, data.selectedOption)
       ) {
         optionCounts[data.selectedOption]++
+      } else if (data.selectedOption === 'prefer_not_to_say') {
+        specialCounts.prefer_not_to_say++
+      } else if (data.selectedOption === 'not_applicable') {
+        specialCounts.not_applicable++
       }
     })
 
@@ -336,6 +341,10 @@ export function getPollAggregates(postId: number) {
             ? Math.round((optionCounts[option.id] / totalResponses) * 100)
             : 0,
       })),
+      specialOptions: [
+        { type: 'prefer_not_to_say', count: specialCounts.prefer_not_to_say },
+        { type: 'not_applicable', count: specialCounts.not_applicable },
+      ],
     }
   }
   if (post.post_type === 'scale') {
@@ -343,6 +352,17 @@ export function getPollAggregates(postId: number) {
     const values = responseData
       .map((data: any) => data.scaleValue)
       .filter((val: any) => typeof val === 'number')
+
+    const specialCounts = { prefer_not_to_say: 0, not_applicable: 0 }
+
+    // Count special options
+    responseData.forEach((data: any) => {
+      if (data.specialOption === 'prefer_not_to_say') {
+        specialCounts.prefer_not_to_say++
+      } else if (data.specialOption === 'not_applicable') {
+        specialCounts.not_applicable++
+      }
+    })
 
     if (values.length === 0) {
       return {
@@ -352,6 +372,10 @@ export function getPollAggregates(postId: number) {
         min: pollConfig.min,
         max: pollConfig.max,
         distribution: [],
+        specialOptions: [
+          { type: 'prefer_not_to_say', count: specialCounts.prefer_not_to_say },
+          { type: 'not_applicable', count: specialCounts.not_applicable },
+        ],
       }
     }
 
@@ -384,6 +408,10 @@ export function getPollAggregates(postId: number) {
         percentage:
           totalResponses > 0 ? Math.round((count / totalResponses) * 100) : 0,
       })),
+      specialOptions: [
+        { type: 'prefer_not_to_say', count: specialCounts.prefer_not_to_say },
+        { type: 'not_applicable', count: specialCounts.not_applicable },
+      ],
     }
   }
 
