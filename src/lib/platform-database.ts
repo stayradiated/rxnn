@@ -254,26 +254,6 @@ export function createPost(
   }
 }
 
-export function getPostsForFeed(_userId?: number) {
-  const db = getDatabase()
-
-  const posts = db
-    .prepare(`
-      SELECT
-        p.*,
-        (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
-        (SELECT COUNT(*) FROM poll_responses pr WHERE pr.post_id = p.id) as response_count
-      FROM posts p
-      ORDER BY p.sort_order ASC
-    `)
-    .all()
-
-  return posts.map((post: any) => ({
-    ...post,
-    poll_config: post.poll_config ? JSON.parse(post.poll_config) : null,
-  }))
-}
-
 export function getPostsForFeedWithDetails(userId: number): PostWithDetails[] {
   const db = getDatabase()
 
@@ -936,111 +916,6 @@ export function getHeartsForComments(commentIds: number[], userId?: number) {
   return result
 }
 
-// Post reordering functions for admin
-export function movePostUp(postId: number) {
-  const db = getDatabase()
-
-  // Get current post and its sort_order
-  const currentPost = db
-    .prepare('SELECT id, sort_order FROM posts WHERE id = ?')
-    .get(postId) as { id: number; sort_order: number } | undefined
-
-  if (!currentPost) {
-    throw new Error('Post not found')
-  }
-
-  // Get the post directly above this one (higher sort_order)
-  const higherPost = db
-    .prepare(`
-      SELECT id, sort_order FROM posts
-      WHERE sort_order > ?
-      ORDER BY sort_order ASC
-      LIMIT 1
-    `)
-    .get(currentPost.sort_order) as
-    | { id: number; sort_order: number }
-    | undefined
-
-  if (!higherPost) {
-    // Already at top
-    return { success: false, message: 'Post is already at the top' }
-  }
-
-  // Swap sort_orders
-  db.prepare('UPDATE posts SET sort_order = ? WHERE id = ?').run(
-    higherPost.sort_order,
-    currentPost.id,
-  )
-  db.prepare('UPDATE posts SET sort_order = ? WHERE id = ?').run(
-    currentPost.sort_order,
-    higherPost.id,
-  )
-
-  return { success: true }
-}
-
-export function movePostDown(postId: number) {
-  const db = getDatabase()
-
-  // Get current post and its sort_order
-  const currentPost = db
-    .prepare('SELECT id, sort_order FROM posts WHERE id = ?')
-    .get(postId) as { id: number; sort_order: number } | undefined
-
-  if (!currentPost) {
-    throw new Error('Post not found')
-  }
-
-  // Get the post directly below this one (lower sort_order)
-  const lowerPost = db
-    .prepare(`
-      SELECT id, sort_order FROM posts
-      WHERE sort_order < ?
-      ORDER BY sort_order DESC
-      LIMIT 1
-    `)
-    .get(currentPost.sort_order) as
-    | { id: number; sort_order: number }
-    | undefined
-
-  if (!lowerPost) {
-    // Already at bottom
-    return { success: false, message: 'Post is already at the bottom' }
-  }
-
-  // Swap sort_orders
-  db.prepare('UPDATE posts SET sort_order = ? WHERE id = ?').run(
-    lowerPost.sort_order,
-    currentPost.id,
-  )
-  db.prepare('UPDATE posts SET sort_order = ? WHERE id = ?').run(
-    currentPost.sort_order,
-    lowerPost.id,
-  )
-
-  return { success: true }
-}
-
-// Initialize database on module load in production
-if (process.env.NODE_ENV === 'production') {
-  initDatabase()
-}
-
-export const movePost = (postId: number, position: number) => {
-  const db = getDatabase()
-
-  // force update post sort order
-
-  const result = db
-    .prepare('UPDATE posts SET sort_order = ? WHERE id = ?')
-    .run(position, postId)
-  if (result.changes === 0) {
-    throw new Error('Failed to move post')
-  }
-
-  return { success: true }
-}
-
 export function getPlatformStats(userId?: number) {
   const db = getDatabase()
 
@@ -1093,4 +968,9 @@ export function getPlatformStats(userId?: number) {
     unansweredQuestions,
     userHasAnsweredQuestions,
   }
+}
+
+// Initialize database on module load in production
+if (process.env.NODE_ENV === 'production') {
+  initDatabase()
 }

@@ -20,18 +20,18 @@ function handleJumpToUnanswered() {
 
 <div class="platform-stats">
   <div class="stat-item">
-    <div class="stat-icon">📊</div>
-    <div class="stat-content">
-      <div class="stat-number">{stats.totalQuestions}</div>
-      <div class="stat-label">Questions</div>
-    </div>
-  </div>
-
-  <div class="stat-item">
     <div class="stat-icon">👥</div>
     <div class="stat-content">
       <div class="stat-number">{stats.activeUsers}</div>
       <div class="stat-label">People</div>
+    </div>
+  </div>
+
+  <div class="stat-item">
+    <div class="stat-icon">📊</div>
+    <div class="stat-content">
+      <div class="stat-number">{stats.totalQuestions}</div>
+      <div class="stat-label">Questions</div>
     </div>
   </div>
 
