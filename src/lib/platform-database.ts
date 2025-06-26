@@ -273,9 +273,12 @@ export function getPostsForFeedWithDetails(userId?: number) {
       if (userId) {
         postData.userResponse = getUserPollResponse(userId, post.id)
 
-        // Only show poll results if user has already submitted a response
+        // Only show poll results if user has already submitted a response AND there are at least 5 total responses
         if (postData.userResponse) {
-          postData.pollResults = getPollAggregates(post.id)
+          const pollResults = getPollAggregates(post.id)
+          if (pollResults && pollResults.totalResponses >= 5) {
+            postData.pollResults = pollResults
+          }
         }
       }
     }
