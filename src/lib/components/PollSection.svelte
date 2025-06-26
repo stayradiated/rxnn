@@ -68,8 +68,8 @@ $effect(() => {
       pollResponses.scaleValue = undefined
     }
     // If user changes scale value, clear special option
-    else if (pollResponses.scaleValue) {
-      pollResponses.specialOption = undefined
+    else if (pollResponses.scaleValue !== undefined) {
+      pollResponses.specialOption = null
     }
   }
 })
@@ -181,6 +181,11 @@ $effect(() => {
           <div class="response-count">
             Current responses: {post.response_count}
           </div>
+          <div class="pending-actions">
+            <button onclick={editResponse} class="edit-pending-btn">
+              ✏️ Edit Response
+            </button>
+          </div>
         </div>
       </div>
     {:else}
@@ -241,6 +246,9 @@ $effect(() => {
                   max={post.poll_config.max}
                   step="1"
                   class="scale-slider"
+                  oninput={() => {
+                    pollResponses.specialOption = null
+                  }}
                 />
                 <div class="slider-value">
                   {pollResponses.scaleValue || post.poll_config.min}
@@ -261,6 +269,9 @@ $effect(() => {
                   bind:group={pollResponses.specialOption}
                   value="prefer_not_to_say"
                   name="poll-special-{post.id}"
+                  onchange={() => {
+                    pollResponses.scaleValue = undefined
+                  }}
                 />
                 <span class="option-text">Prefer Not To Say</span>
               </label>
@@ -270,6 +281,9 @@ $effect(() => {
                   bind:group={pollResponses.specialOption}
                   value="not_applicable"
                   name="poll-special-{post.id}"
+                  onchange={() => {
+                    pollResponses.scaleValue = undefined
+                  }}
                 />
                 <span class="option-text">Not Applicable</span>
               </label>
@@ -658,6 +672,30 @@ $effect(() => {
     font-size: 0.9rem;
     font-weight: 500;
     display: inline-block;
+  }
+
+  .pending-actions {
+    margin-top: 1rem;
+  }
+
+  .edit-pending-btn {
+    background: var(--color-primary, #2563eb);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .edit-pending-btn:hover {
+    background: var(--color-primary-dark, #1d4ed8);
+    transform: translateY(-1px);
   }
 
   .scale-chart {

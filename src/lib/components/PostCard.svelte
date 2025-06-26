@@ -56,10 +56,17 @@ async function submitPollResponse(responseData: any) {
 
     if (response.ok) {
       const data = await response.json()
-      pollResults = data.pollResults
       userResponse = responseData
-      showPollResults = true
       pollResponses = {} // Clear form
+
+      // Only show results if they were returned (minimum threshold met)
+      if (data.pollResults) {
+        pollResults = data.pollResults
+        showPollResults = true
+      } else {
+        pollResults = null
+        showPollResults = false
+      }
 
       // Update response count
       post.response_count += 1

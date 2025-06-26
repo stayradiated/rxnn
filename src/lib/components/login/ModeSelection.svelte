@@ -15,14 +15,14 @@ let { isLoading, onCreateNew, onUseExisting }: Props = $props()
     onclick={onCreateNew}
     class="btn-primary btn-large"
     disabled={isLoading}>
-    🦊 Create Identity
+    🦊 Create Anonymous Identity
   </button>
 
   <button
     onclick={onUseExisting}
     class="btn-secondary btn-large"
     disabled={isLoading}>
-    🔑 I Have a Token
+    🔑 Edit Previous Responses
   </button>
 </div>
 
