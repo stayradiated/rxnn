@@ -18,7 +18,7 @@ const postComments = $derived(post.comments)
 const heartCount = $derived(post.heartCount || 0)
 const userHearted = $derived(post.userHearted || false)
 
-let showComments = $state(false)
+let showComments = $state(post.post_type === 'text')
 let newComment = $state('')
 let commentSubmitting = $state(false)
 let editingCommentId = $state<number | null>(null)
@@ -202,14 +202,18 @@ const handleUpdateComment: SubmitFunction = (event) => {
                       onclick={() => startEditingComment(comment)}
                       class="comment-edit-btn"
                       title="Edit comment">
-                      ✏️
+                      <span class="edit-icon">✏️</span>
+                      Edit
                     </button>
                     <form
                       method="POST"
                       action="?/deleteComment"
                       use:enhance={handleDeleteComment}>
                       <input type="hidden" name="commentId" value={comment.id} />
-                      <button class="comment-delete-btn" title="Delete comment">🗑️</button>
+                      <button class="comment-delete-btn" title="Delete comment">
+                        <span class="delete-icon">🗑️</span>
+                        Delete
+                      </button>
                     </form>
                   </div>
                 {/if}
@@ -225,18 +229,19 @@ const handleUpdateComment: SubmitFunction = (event) => {
           <form
             method="POST"
             action="?/createComment"
-            use:enhance>
+            use:enhance
+            class="comment-form-inner">
             <input type="hidden" name="postId" value={post.id} />
             <textarea
               name="content"
               bind:value={newComment}
-              placeholder="Write a comment..."
-              rows="2"
+              placeholder="Leave a comment…"
+              rows="1"
               disabled={commentSubmitting}></textarea>
             <button
               class="btn-primary btn-small"
               disabled={!newComment?.trim() || commentSubmitting}>
-              {commentSubmitting ? 'Posting...' : 'Post Comment'}
+              {commentSubmitting ? 'Posting...' : 'Post'}
             </button>
           </form>
         </div>
@@ -396,9 +401,7 @@ const handleUpdateComment: SubmitFunction = (event) => {
 
   /* Comments Styles */
   .comments-content {
-    margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid var(--color-border);
   }
 
   .comments-list {
@@ -446,38 +449,59 @@ const handleUpdateComment: SubmitFunction = (event) => {
     gap: 0.25rem;
   }
 
-  .comment-edit-btn,
-  .comment-delete-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.25rem;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    transition: all 0.2s;
+  .comment-owner-actions {
     display: flex;
+    gap: 0.375rem;
     align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
+    margin-top: 0.5rem;
   }
 
   .comment-edit-btn {
-    color: var(--color-text-secondary);
+    background: var(--color-surface, rgba(255, 255, 255, 0.8));
+    color: var(--color-text-secondary, #6b7280);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    backdrop-filter: blur(4px);
   }
 
   .comment-edit-btn:hover {
-    background: var(--color-surface-alt);
-    color: var(--color-primary);
+    background: var(--color-surface-hover, rgba(249, 250, 251, 0.95));
+    color: var(--color-text, #374151);
+    border-color: var(--color-border-hover, #d1d5db);
+    transform: translateY(-1px);
+    box-shadow: 0 1px 4px var(--color-shadow, rgba(0, 0, 0, 0.1));
   }
 
   .comment-delete-btn {
-    color: var(--color-text-secondary);
+    background: var(--color-surface, rgba(255, 255, 255, 0.8));
+    color: #dc2626;
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    backdrop-filter: blur(4px);
   }
 
   .comment-delete-btn:hover {
-    background: #fef2f2;
-    color: #dc2626;
+    background: rgba(254, 242, 242, 0.95);
+    color: #b91c1c;
+    border-color: rgba(185, 28, 28, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 1px 4px rgba(220, 38, 38, 0.15);
   }
 
   .comment-edit-form {
@@ -520,19 +544,30 @@ const handleUpdateComment: SubmitFunction = (event) => {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: 6px;
-    padding: 1rem;
+    padding: 0.75rem;
+  }
+
+  .comment-form-inner {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
   }
 
   .comment-form textarea {
-    width: 100%;
+    flex: 1;
     border: 1px solid var(--color-border);
     border-radius: 4px;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.75rem;
     resize: vertical;
-    min-height: 60px;
+    height: 36px;
+    min-height: 36px;
+    max-height: 120px;
     background: var(--color-bg);
     color: var(--color-text);
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    box-sizing: border-box;
   }
 
   .comment-form textarea:focus {
@@ -585,6 +620,15 @@ const handleUpdateComment: SubmitFunction = (event) => {
   .btn-small {
     padding: 0.5rem 1rem;
     font-size: 0.9rem;
+    white-space: nowrap;
+    align-self: flex-start;
+  }
+
+  .comment-form .btn-small {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .spacer {
@@ -614,6 +658,17 @@ const handleUpdateComment: SubmitFunction = (event) => {
 
     .comment-form {
       padding: 0.75rem;
+    }
+
+    .comment-form-inner {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+    }
+
+    .comment-form .btn-small {
+      align-self: flex-end;
+      height: auto;
     }
   }
 </style>
