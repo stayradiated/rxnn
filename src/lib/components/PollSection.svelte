@@ -54,14 +54,16 @@ const handleSubmit: SubmitFunction = () => {
 
 // Clear conflicting selections for scale polls
 $effect(() => {
-  // Initialize scaleValue to the minimum value if not set
+  // Initialize scaleValue to the middle value if not set
   if (
     post.post_type === 'scale' &&
     post.poll_config?.type === 'scale' &&
     !pollResponses.scaleValue &&
     !pollResponses.specialOption
   ) {
-    pollResponses.scaleValue = post.poll_config.min || 1
+    const min = post.poll_config.min || 1
+    const max = post.poll_config.max || 5
+    pollResponses.scaleValue = Math.round((min + max) / 2)
   }
 
   if (post.post_type === 'scale' && pollResponses) {
@@ -264,13 +266,10 @@ $effect(() => {
                       pollResponses.specialOption = null
                     }}
                   />
-                  <div class="slider-value">
-                    {pollResponses.scaleValue || min}
-                  </div>
                 </div>
                 <div class="slider-ticks">
                   {#each Array.from({length: max - min + 1}, (_, i) => min + i) as value, index (index)}
-                    <span class="tick-mark">{value}</span>
+                    <span class="tick-mark" class:selected={pollResponses.scaleValue === value}>{value}</span>
                   {/each}
                 </div>
               </div>
@@ -369,7 +368,8 @@ $effect(() => {
     justify-content: space-between;
     margin-bottom: 1rem;
     font-size: 0.9rem;
-    color: var(--color-text-secondary, #6b7280);
+    color: var(--color-text, #374151);
+    font-weight: 600;
   }
 
   .slider-container {
@@ -439,29 +439,6 @@ $effect(() => {
     border: none;
   }
 
-  .slider-value {
-    position: absolute;
-    top: -2.5rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--color-primary, #2563eb);
-    color: var(--color-text-inverse, white);
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    pointer-events: none;
-  }
-
-  .slider-value::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 6px solid transparent;
-    border-top-color: var(--color-primary, #2563eb);
-  }
 
   .slider-ticks {
     display: flex;
@@ -473,6 +450,16 @@ $effect(() => {
     font-size: 0.8rem;
     color: var(--color-text-muted, #6b7280);
     font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+  }
+
+  .tick-mark.selected {
+    background: var(--color-primary, #2563eb);
+    color: var(--color-text-inverse, white);
+    font-weight: 600;
+    transform: scale(1.1);
   }
 
   .poll-submit {
@@ -612,9 +599,9 @@ $effect(() => {
     justify-content: space-between;
     margin: 1rem 0;
     padding: 0 0.5rem;
-    font-size: 0.85rem;
-    color: var(--color-text-secondary, #6b7280);
-    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--color-text, #374151);
+    font-weight: 600;
   }
 
   .special-options {
@@ -807,11 +794,6 @@ $effect(() => {
 
     .tick-mark {
       font-size: 0.7rem;
-    }
-
-    .slider-value {
-      font-size: 0.8rem;
-      padding: 0.2rem 0.6rem;
     }
 
     .scale-chart {
