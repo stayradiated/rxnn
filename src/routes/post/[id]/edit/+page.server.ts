@@ -29,7 +29,6 @@ export const load: PageServerLoad = async ({ params }) => {
       post_type: post.post_type,
       poll_config: post.poll_config,
       user_id: post.user_id,
-      created_at: post.created_at,
     },
   }
 }

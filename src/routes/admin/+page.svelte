@@ -29,14 +29,13 @@ function getCommentCount(post: any) {
   <div class="posts-section">
     <h2>All Posts ({data.posts.length})</h2>
 
-    {#each data.posts as post}
+    {#each data.posts as post (post.id)}
       <div class="post-item">
         <div class="post-header">
           <h3>{post.title}</h3>
           <div class="post-meta">
             <span class="post-type">{post.post_type}</span>
             <span class="post-author">by {post.username}</span>
-            <span class="post-date">{formatDate(post.created_at)}</span>
             <span class="comment-count">{getCommentCount(post)} comments</span>
           </div>
         </div>
@@ -52,7 +51,7 @@ function getCommentCount(post: any) {
             <strong>Poll Options:</strong>
             {#if post.poll_config.options}
               <ul>
-                {#each post.poll_config.options as option}
+                {#each post.poll_config.options as option, index (index)}
                   <li>{option.label}</li>
                 {/each}
               </ul>
@@ -97,11 +96,10 @@ function getCommentCount(post: any) {
         {#if post.comments && post.comments.length > 0}
           <div class="comments-section">
             <h4>Comments:</h4>
-            {#each post.comments as comment}
+            {#each post.comments as comment (comment.id)}
               <div class="comment-item">
                 <div class="comment-header">
                   <span class="comment-author">{comment.username}</span>
-                  <span class="comment-date">{formatDate(comment.created_at)}</span>
                 </div>
                 <div class="comment-content">{comment.content}</div>
                 <div class="comment-actions">

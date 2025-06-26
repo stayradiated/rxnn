@@ -10,10 +10,9 @@ interface Props {
   currentUser: {
     id: number
   }
-  formatTimeAgo: (dateString: string) => string
 }
 
-let { post, currentUser, formatTimeAgo }: Props = $props()
+let { post, currentUser }: Props = $props()
 
 const postComments = $derived(post.comments)
 const heartCount = $derived(post.heartCount || 0)
@@ -76,13 +75,6 @@ const handleUpdateComment: SubmitFunction = (event) => {
 </script>
 
 <article class="post-card">
-  <div class="post-header">
-    <div class="post-meta">
-      <span>#{post.id}</span>
-      <span class="post-time">{formatTimeAgo(post.created_at)}</span>
-    </div>
-  </div>
-
   <h2 class="post-title">{post.title}</h2>
 
   {#if post.content}
@@ -152,7 +144,6 @@ const handleUpdateComment: SubmitFunction = (event) => {
           {#each postComments as comment (comment.id)}
             <div class="comment">
               <div class="comment-header">
-                <span class="comment-time">{formatTimeAgo(comment.created_at)}</span>
               </div>
 
               {#if editingCommentId === comment.id}
@@ -264,21 +255,6 @@ const handleUpdateComment: SubmitFunction = (event) => {
 
   .post-card:hover {
     box-shadow: 0 4px 12px var(--color-shadow);
-  }
-
-  .post-header {
-    margin-bottom: 1rem;
-  }
-
-  .post-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .post-time {
-    color: var(--color-text-muted);
-    font-size: 0.8rem;
   }
 
   .post-footer {
@@ -393,6 +369,7 @@ const handleUpdateComment: SubmitFunction = (event) => {
     font-size: 1.3rem;
     font-weight: 600;
     margin-bottom: 0.75rem;
+    margin-top: 0;
     line-height: 1.4;
   }
 
@@ -427,11 +404,6 @@ const handleUpdateComment: SubmitFunction = (event) => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.5rem;
-  }
-
-  .comment-time {
-    color: var(--color-text-muted);
-    font-size: 0.8rem;
   }
 
   .comment-content {
@@ -604,12 +576,6 @@ const handleUpdateComment: SubmitFunction = (event) => {
   @media (max-width: 768px) {
     .post-card {
       padding: 1rem;
-    }
-
-    .post-meta {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.25rem;
     }
 
     .post-footer {

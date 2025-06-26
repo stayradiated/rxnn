@@ -1,13 +1,10 @@
 <script lang="ts">
 interface Props {
   stats: {
-    totalPosts: number
-    totalUsers: number
     activeUsers: number
     totalQuestions: number
     unansweredQuestions: number
     userHasAnsweredQuestions: boolean
-    lastActivity: string | null
   }
   onJumpToUnanswered?: () => void
 }
@@ -18,24 +15,6 @@ function handleJumpToUnanswered() {
   if (onJumpToUnanswered) {
     onJumpToUnanswered()
   }
-}
-
-function formatTimeSinceActivity(lastActivity: string | null): string {
-  if (!lastActivity) return 'No activity'
-
-  const lastDate = new Date(lastActivity)
-  const now = new Date()
-  const diffMs = now.getTime() - lastDate.getTime()
-  const diffMinutes = Math.floor(diffMs / (1000 * 60))
-
-  if (diffMinutes < 1) return 'Just now'
-  if (diffMinutes < 60) return `${diffMinutes}m ago`
-
-  const diffHours = Math.floor(diffMinutes / 60)
-  if (diffHours < 24) return `${diffHours}h ago`
-
-  const diffDays = Math.floor(diffHours / 24)
-  return `${diffDays}d ago`
 }
 </script>
 
@@ -56,15 +35,8 @@ function formatTimeSinceActivity(lastActivity: string | null): string {
     </div>
   </div>
 
-  <div class="stat-item">
-    <div class="stat-icon">🕐</div>
-    <div class="stat-content">
-      <div class="stat-number">{formatTimeSinceActivity(stats.lastActivity)}</div>
-      <div class="stat-label">Last Activity</div>
-    </div>
-  </div>
-
   {#if stats.unansweredQuestions > 0 && stats.userHasAnsweredQuestions}
+    <div class="spacer"></div>
     <button class="unanswered-button" onclick={handleJumpToUnanswered}>
       <div class="unanswered-content">
         <div class="unanswered-number">{stats.unansweredQuestions}</div>
@@ -110,6 +82,10 @@ function formatTimeSinceActivity(lastActivity: string | null): string {
   .stat-label {
     color: var(--color-text-secondary);
     font-weight: 400;
+  }
+
+  .spacer {
+    flex-grow: 1;
   }
 
   .unanswered-button {

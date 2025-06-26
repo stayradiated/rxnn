@@ -16,9 +16,6 @@ export interface User {
   id: number
   token: string
   username: string
-  created_at: string
-  updated_at: string
-  last_seen: string
 }
 
 export type SessionValidationResult =
@@ -58,8 +55,7 @@ export function validateSessionToken(token: string): SessionValidationResult {
   const row = db
     .prepare(`
     SELECT session.id, session.user_id, session.expires_at, 
-           users.id as user_id, users.token, users.username,
-           users.created_at, users.updated_at, users.last_seen
+           users.id as user_id, users.token, users.username
     FROM session 
     INNER JOIN users ON users.id = session.user_id 
     WHERE session.id = ?
@@ -80,9 +76,6 @@ export function validateSessionToken(token: string): SessionValidationResult {
     id: row.user_id,
     token: row.token,
     username: row.username,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-    last_seen: row.last_seen,
   }
 
   if (Date.now() >= session.expiresAt.getTime()) {

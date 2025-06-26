@@ -2,9 +2,6 @@ type User = {
   id: number
   token: string
   username: string
-  created_at: Date
-  updated_at: Date
-  last_seen: Date
 }
 
 // Poll option type for radio buttons
@@ -39,7 +36,6 @@ type PostBase = {
   post_type: PostType
   title: string
   content: string | null
-  created_at: string
   sort_order: number
 }
 
@@ -121,7 +117,6 @@ type Comment = {
   user_id: number
   post_id: number
   content: string
-  created_at: string
 }
 
 type CommentWithDetails = Comment & {
@@ -134,8 +129,6 @@ type PollResponse = {
   user_id: number
   post_id: number
   response_data: string
-  created_at: string
-  updated_at: string
 }
 
 type ResponseData = {

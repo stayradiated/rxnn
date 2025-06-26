@@ -8,7 +8,6 @@ primary_region = 'syd'
 
 [env]
   DATABASE_PATH = '/data/platform.db'
-  SECRET_ADMIN_KEY = 'sFIfL0WalPqc1LPbOWRkFw'
 
 [build]
 

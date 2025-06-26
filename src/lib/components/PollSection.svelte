@@ -157,7 +157,7 @@ $effect(() => {
         <!-- Special Options Stats -->
         {#if pollResults.specialOptions}
           <div class="special-stats">
-            {#each pollResults.specialOptions as option}
+            {#each pollResults.specialOptions as option, index (index)}
               {#if option.count > 0}
                 <div class="special-stat">
                   <span class="special-label">

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import Database from 'better-sqlite3'
-
+import { dropTimestampColumns } from './timestamp-migration'
 import type {
   Comment,
   PollAggregates,
@@ -45,10 +45,7 @@ function createTables() {
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       token TEXT UNIQUE NOT NULL,
-      username TEXT UNIQUE NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      last_seen DATETIME DEFAULT CURRENT_TIMESTAMP
+      username TEXT UNIQUE NOT NULL
     )
   `)
 
@@ -62,7 +59,6 @@ function createTables() {
       post_type TEXT NOT NULL,
       poll_config TEXT,
       sort_order INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     )
   `)
@@ -74,7 +70,6 @@ function createTables() {
       user_id INTEGER NOT NULL,
       post_id INTEGER NOT NULL,
       content TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
       FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE
     )
@@ -87,8 +82,6 @@ function createTables() {
       user_id INTEGER NOT NULL,
       post_id INTEGER NOT NULL,
       response_data TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
       FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE,
       UNIQUE (user_id, post_id)
@@ -102,7 +95,6 @@ function createTables() {
       user_id INTEGER NOT NULL,
       target_type TEXT NOT NULL, -- 'post' or 'comment'
       target_id INTEGER NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
       UNIQUE (user_id, target_type, target_id)
     )
@@ -124,12 +116,14 @@ function createTables() {
     // Column already exists, ignore error
   }
 
+  // Drop timestamp columns for privacy
+  dropTimestampColumns(db)
+
   // Create indexes for better performance
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_users_token ON users (token);
     CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
-    CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts (created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_posts_sort_order ON posts (sort_order DESC, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_posts_sort_order ON posts (sort_order DESC);
     CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts (user_id);
     CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments (post_id);
     CREATE INDEX IF NOT EXISTS idx_comments_user_id ON comments (user_id);
@@ -169,14 +163,6 @@ export function findUserByToken(token: string): User | undefined {
   return db
     .prepare<[string], User>('SELECT * FROM users WHERE token = ?')
     .get(token)
-}
-
-export function updateLastSeen(userId: number) {
-  const db = getDatabase()
-
-  return db
-    .prepare('UPDATE users SET last_seen = CURRENT_TIMESTAMP WHERE id = ?')
-    .run(userId)
 }
 
 export function isUsernameAvailable(username: string, excludeUserId?: number) {
@@ -241,7 +227,6 @@ export function createPost(
         content: string | null
         post_type: string
         poll_config: string | null
-        created_at: string
         sort_order: number
       }
     >(`
@@ -279,7 +264,7 @@ export function getPostsForFeed(_userId?: number) {
         (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
         (SELECT COUNT(*) FROM poll_responses pr WHERE pr.post_id = p.id) as response_count
       FROM posts p
-      ORDER BY p.sort_order ASC, p.created_at ASC
+      ORDER BY p.sort_order ASC
     `)
     .all()
 
@@ -302,7 +287,6 @@ export function getPostsForFeedWithDetails(userId: number): PostWithDetails[] {
         content: string
         post_type: string
         poll_config: string | null
-        created_at: string
         sort_order: number
         comment_count: number
         response_count: number
@@ -313,7 +297,7 @@ export function getPostsForFeedWithDetails(userId: number): PostWithDetails[] {
         (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
         (SELECT COUNT(*) FROM poll_responses pr WHERE pr.post_id = p.id) as response_count
       FROM posts p
-      ORDER BY p.sort_order ASC, p.created_at ASC
+      ORDER BY p.sort_order ASC
     `)
     .all()
 
@@ -524,7 +508,6 @@ export function getPostById(id: number): Post | null {
         content: string | null
         post_type: string
         poll_config: string | null
-        created_at: string
         sort_order: number
       }
     >(`
@@ -590,7 +573,6 @@ export function updatePost(
         content: string | null
         post_type: string
         poll_config: string | null
-        created_at: string
         sort_order: number
       }
     >(`
@@ -683,7 +665,7 @@ export function getCommentsForPost(postId: number): Comment[] {
       SELECT c.*
       FROM comments c
       WHERE c.post_id = ?
-      ORDER BY c.created_at ASC
+      ORDER BY c.id ASC
     `)
     .all(postId)
 
@@ -790,8 +772,7 @@ export function submitPollResponse(
       VALUES (?, ?, ?)
       ON CONFLICT (user_id, post_id)
       DO UPDATE SET
-        response_data = excluded.response_data,
-        updated_at = CURRENT_TIMESTAMP
+        response_data = excluded.response_data
     `)
     .run(userId, postId, dataJson)
 
@@ -971,9 +952,9 @@ export function movePostUp(postId: number) {
   // Get the post directly above this one (higher sort_order)
   const higherPost = db
     .prepare(`
-      SELECT id, sort_order FROM posts 
-      WHERE sort_order > ? 
-      ORDER BY sort_order ASC 
+      SELECT id, sort_order FROM posts
+      WHERE sort_order > ?
+      ORDER BY sort_order ASC
       LIMIT 1
     `)
     .get(currentPost.sort_order) as
@@ -1013,9 +994,9 @@ export function movePostDown(postId: number) {
   // Get the post directly below this one (lower sort_order)
   const lowerPost = db
     .prepare(`
-      SELECT id, sort_order FROM posts 
-      WHERE sort_order < ? 
-      ORDER BY sort_order DESC 
+      SELECT id, sort_order FROM posts
+      WHERE sort_order < ?
+      ORDER BY sort_order DESC
       LIMIT 1
     `)
     .get(currentPost.sort_order) as
@@ -1063,25 +1044,16 @@ export const movePost = (postId: number, position: number) => {
 export function getPlatformStats(userId?: number) {
   const db = getDatabase()
 
-  // Get total posts count
-  const totalPosts = db
-    .prepare('SELECT COUNT(*) as count FROM posts')
-    .get() as { count: number }
-
-  // Get total users count
-  const totalUsers = db
-    .prepare('SELECT COUNT(*) as count FROM users')
-    .get() as { count: number }
-
-  // Get active users (users who have posted, commented, or responded to polls in the last 30 days)
+  // Get active users (all users who have posted, commented, or responded to polls)
+  // Note: Timestamp columns removed for privacy - showing all users with activity
   const activeUsers = db
     .prepare(`
       SELECT COUNT(DISTINCT user_id) as count FROM (
-        SELECT user_id FROM posts WHERE created_at > datetime('now', '-30 days')
+        SELECT user_id FROM posts
         UNION
-        SELECT user_id FROM comments WHERE created_at > datetime('now', '-30 days')
+        SELECT user_id FROM comments
         UNION
-        SELECT user_id FROM poll_responses WHERE created_at > datetime('now', '-30 days')
+        SELECT user_id FROM poll_responses
       )
     `)
     .get() as { count: number }
@@ -1097,8 +1069,8 @@ export function getPlatformStats(userId?: number) {
   if (userId) {
     const unanswered = db
       .prepare(`
-        SELECT COUNT(*) as count FROM posts 
-        WHERE post_type != 'text' 
+        SELECT COUNT(*) as count FROM posts
+        WHERE post_type != 'text'
         AND id NOT IN (
           SELECT DISTINCT post_id FROM poll_responses WHERE user_id = ?
         )
@@ -1115,26 +1087,10 @@ export function getPlatformStats(userId?: number) {
     userHasAnsweredQuestions = answeredCount.count > 0
   }
 
-  // Get last activity timestamp (most recent post, comment, or poll response)
-  const lastActivity = db
-    .prepare(`
-      SELECT MAX(created_at) as last_activity FROM (
-        SELECT created_at FROM posts
-        UNION ALL
-        SELECT created_at FROM comments
-        UNION ALL
-        SELECT created_at FROM poll_responses
-      )
-    `)
-    .get() as { last_activity: string | null }
-
   return {
-    totalPosts: totalPosts.count,
-    totalUsers: totalUsers.count,
     activeUsers: activeUsers.count,
     totalQuestions: totalQuestions.count,
     unansweredQuestions,
     userHasAnsweredQuestions,
-    lastActivity: lastActivity.last_activity,
   }
 }

@@ -7,7 +7,6 @@ import {
   createUser,
   findUserByToken,
   isUsernameAvailable,
-  updateLastSeen,
 } from '$lib/platform-database'
 import { randomBytes } from 'node:crypto'
 import { fail, redirect } from '@sveltejs/kit'
@@ -95,9 +94,6 @@ export const actions: Actions = {
     if (!user) {
       return fail(400, { error: 'Invalid token. Please check and try again.' })
     }
-
-    // Update last seen timestamp
-    updateLastSeen(user.id)
 
     // Create and set session cookie for token login
     const sessionToken = generateSessionToken()
