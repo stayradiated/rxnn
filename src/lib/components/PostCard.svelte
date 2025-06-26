@@ -75,43 +75,8 @@ const handleUpdateComment: SubmitFunction = (event) => {
 </script>
 
 <article class="post-card">
-  <h2 class="post-title">{post.title}</h2>
-
-  {#if post.content}
-    <p class="post-content">{post.content}</p>
-  {/if}
-
-  <!-- Interactive Poll Section -->
-  <PollSection {post} />
-
-  <!-- Post Footer with Actions -->
-  <div class="post-footer">
-    <div class="post-actions">
-      {#if post.post_type !== 'text'}
-        <span class="action-stat">
-          📊 {post.response_count} responses
-        </span>
-      {/if}
-
-      <button
-        onclick={toggleComments}
-        class="action-button comments-button"
-        title="Toggle comments">
-        💬 {post.comment_count} comment{post.comment_count !== 1 ? 's' : ''}
-        <span class="toggle-icon">{showComments ? '▼' : '▶'}</span>
-      </button>
-
-      {#if currentUser}
-        <HeartButton
-          targetType="post"
-          targetId={post.id}
-          {heartCount}
-          {userHearted}
-        />
-      {:else if heartCount > 0}
-        <span class="action-stat">❤️ {heartCount}</span>
-      {/if}
-    </div>
+  <header class="post-header">
+    <h2 class="post-title">{post.title}</h2>
 
     {#if currentUser && currentUser.id === post.user_id}
       <div class="post-owner-actions">
@@ -133,6 +98,43 @@ const handleUpdateComment: SubmitFunction = (event) => {
           </button>
         </form>
       </div>
+    {/if}
+  </header>
+
+  {#if post.content}
+    <p class="post-content">{post.content}</p>
+  {/if}
+
+  <!-- Interactive Poll Section -->
+  <PollSection {post} />
+
+  <!-- Post Footer with Actions -->
+  <div class="post-footer">
+    <button
+      onclick={toggleComments}
+      class="action-button comments-button"
+      title="Toggle comments">
+      💬 {post.comment_count} comment{post.comment_count !== 1 ? 's' : ''}
+      <span class="toggle-icon">{showComments ? '▼' : '▶'}</span>
+    </button>
+
+    {#if post.post_type !== 'text'}
+      <span class="action-stat">
+        📊 {post.response_count} responses
+      </span>
+    {/if}
+
+    <div class="spacer"></div>
+
+    {#if currentUser}
+      <HeartButton
+        targetType="post"
+        targetId={post.id}
+        {heartCount}
+        {userHearted}
+      />
+    {:else if heartCount > 0}
+      <span class="action-stat">❤️ {heartCount}</span>
     {/if}
   </div>
 
@@ -267,12 +269,6 @@ const handleUpdateComment: SubmitFunction = (event) => {
     gap: 1rem;
   }
 
-  .post-actions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
   .action-stat {
     color: var(--color-text-secondary);
     font-size: 0.85rem;
@@ -305,55 +301,73 @@ const handleUpdateComment: SubmitFunction = (event) => {
     margin-left: 0.25rem;
   }
 
+  .post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .post-title {
+    flex: 1;
+    margin: 0;
+  }
+
   .post-owner-actions {
     display: flex;
     gap: 0.5rem;
     align-items: center;
+    flex-shrink: 0;
   }
 
   .edit-button {
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
+    background: var(--color-surface, rgba(255, 255, 255, 0.8));
+    color: var(--color-text-secondary, #6b7280);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 6px;
+    padding: 0.375rem 0.75rem;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 500;
     transition: all 0.2s;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.375rem;
     text-decoration: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(4px);
   }
 
   .edit-button:hover {
-    background: var(--color-primary-dark);
+    background: var(--color-surface-hover, rgba(249, 250, 251, 0.95));
+    color: var(--color-text, #374151);
+    border-color: var(--color-border-hover, #d1d5db);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px var(--color-shadow, rgba(0, 0, 0, 0.1));
   }
 
   .delete-button {
-    background: #dc2626;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
+    background: var(--color-surface, rgba(255, 255, 255, 0.8));
+    color: #dc2626;
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 6px;
+    padding: 0.375rem 0.75rem;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 500;
     transition: all 0.2s;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    gap: 0.375rem;
+    backdrop-filter: blur(4px);
   }
 
   .delete-button:hover {
-    background: #b91c1c;
+    background: rgba(254, 242, 242, 0.95);
+    color: #b91c1c;
+    border-color: rgba(185, 28, 28, 0.3);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
   }
 
   .edit-icon {
@@ -573,32 +587,29 @@ const handleUpdateComment: SubmitFunction = (event) => {
     font-size: 0.9rem;
   }
 
+  .spacer {
+    flex-grow: 1;
+  }
+
   @media (max-width: 768px) {
     .post-card {
       padding: 1rem;
     }
 
-    .post-footer {
+    .post-header {
       flex-direction: column;
-      align-items: stretch;
-      gap: 0.75rem;
-    }
-
-    .post-actions {
-      justify-content: center;
-      flex-wrap: wrap;
+      gap: 0;
     }
 
     .post-owner-actions {
-      flex-direction: column;
-      gap: 0.25rem;
+      justify-content: center;
+      margin-bottom: 0.5rem;
     }
 
     .edit-button,
     .delete-button {
-      align-self: center;
-      font-size: 0.8rem;
-      padding: 0.4rem 0.8rem;
+      font-size: 0.75rem;
+      padding: 0.375rem 0.625rem;
     }
 
     .comment-form {

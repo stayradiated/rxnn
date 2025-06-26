@@ -76,9 +76,15 @@ $effect(() => {
           <h4>Poll Results</h4>
           {#if userResponse}
             <button onclick={editResponse} class="edit-response-btn" title="Edit your response">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="m18.5 2.5 a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="m18.5 2.5 a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
               </svg>
               Edit Response
             </button>
@@ -109,10 +115,11 @@ $effect(() => {
         {:else if post.post_type === 'scale' && post.poll_config?.type === 'scale' && post.pollResults.type === 'scale'}
           {@const min = post.poll_config.min || 1}
           {@const max = post.poll_config.max || 5}
+          {@const totalValidResponses = post.pollResults.distribution?.reduce((sum, item) => sum + item.count, 0) || 0}
           <div class="scale-results">
             <div class="scale-stats">
               <span>Average: {post.pollResults.average?.toFixed(1) || 'N/A'}</span>
-              <span>Total responses: {post.pollResults.totalResponses || 0}</span>
+              <span>Votes cast: {totalValidResponses}</span>
             </div>
 
             {#if post.poll_config.minLabel || post.poll_config.maxLabel}

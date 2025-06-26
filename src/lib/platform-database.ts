@@ -392,6 +392,12 @@ export function getPollAggregates(postId: number): PollAggregates | null {
       }
     })
 
+    // Calculate responses excluding special options for percentage calculation
+    const totalValidResponses =
+      totalResponses -
+      specialCounts.prefer_not_to_say -
+      specialCounts.not_applicable
+
     return {
       totalResponses,
       type: 'radio',
@@ -400,8 +406,8 @@ export function getPollAggregates(postId: number): PollAggregates | null {
         label: option.label,
         count: optionCounts[option.id] || 0,
         percentage:
-          totalResponses > 0
-            ? Math.round((optionCounts[option.id] / totalResponses) * 100)
+          totalValidResponses > 0
+            ? Math.round((optionCounts[option.id] / totalValidResponses) * 100)
             : 0,
       })),
       specialOptions: [
@@ -459,6 +465,9 @@ export function getPollAggregates(postId: number): PollAggregates | null {
       }
     })
 
+    // Calculate responses excluding special options for percentage calculation
+    const totalValidResponses = values.length
+
     return {
       totalResponses,
       type: 'scale',
@@ -471,7 +480,9 @@ export function getPollAggregates(postId: number): PollAggregates | null {
         value: Number.parseInt(value),
         count,
         percentage:
-          totalResponses > 0 ? Math.round((count / totalResponses) * 100) : 0,
+          totalValidResponses > 0
+            ? Math.round((count / totalValidResponses) * 100)
+            : 0,
       })),
       specialOptions: [
         { type: 'prefer_not_to_say', count: specialCounts.prefer_not_to_say },
