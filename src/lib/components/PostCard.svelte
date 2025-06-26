@@ -1,5 +1,5 @@
 <script lang="ts">
-import { goto } from '$app/navigation'
+import { goto, invalidateAll } from '$app/navigation'
 import CommentsSection from './CommentsSection.svelte'
 import HeartButton from './HeartButton.svelte'
 import PollSection from './PollSection.svelte'
@@ -79,6 +79,9 @@ async function submitPollResponse(responseData: any) {
       if (data.isNewResponse) {
         post = { ...post, response_count: post.response_count + 1 }
       }
+
+      // Invalidate all data to refresh stats and other server-side data
+      await invalidateAll()
     } else {
       console.error('Failed to submit poll response')
     }

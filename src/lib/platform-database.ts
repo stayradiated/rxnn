@@ -907,3 +907,82 @@ export const movePost = (postId: number, position: number) => {
 
   return { success: true }
 }
+
+export function getPlatformStats(userId?: number) {
+  const db = getDatabase()
+
+  // Get total posts count
+  const totalPosts = db
+    .prepare('SELECT COUNT(*) as count FROM posts')
+    .get() as { count: number }
+
+  // Get total users count
+  const totalUsers = db
+    .prepare('SELECT COUNT(*) as count FROM users')
+    .get() as { count: number }
+
+  // Get active users (users who have posted, commented, or responded to polls in the last 30 days)
+  const activeUsers = db
+    .prepare(`
+      SELECT COUNT(DISTINCT user_id) as count FROM (
+        SELECT user_id FROM posts WHERE created_at > datetime('now', '-30 days')
+        UNION
+        SELECT user_id FROM comments WHERE created_at > datetime('now', '-30 days')
+        UNION
+        SELECT user_id FROM poll_responses WHERE created_at > datetime('now', '-30 days')
+      )
+    `)
+    .get() as { count: number }
+
+  // Get total questions (posts that are not text-only)
+  const totalQuestions = db
+    .prepare('SELECT COUNT(*) as count FROM posts WHERE post_type != ?')
+    .get('text') as { count: number }
+
+  // Get unanswered questions for the specific user (questions they haven't responded to)
+  let unansweredQuestions = 0
+  let userHasAnsweredQuestions = false
+  if (userId) {
+    const unanswered = db
+      .prepare(`
+        SELECT COUNT(*) as count FROM posts 
+        WHERE post_type != 'text' 
+        AND id NOT IN (
+          SELECT DISTINCT post_id FROM poll_responses WHERE user_id = ?
+        )
+      `)
+      .get(userId) as { count: number }
+    unansweredQuestions = unanswered.count
+
+    // Check if user has answered at least one question
+    const answeredCount = db
+      .prepare(`
+        SELECT COUNT(DISTINCT post_id) as count FROM poll_responses WHERE user_id = ?
+      `)
+      .get(userId) as { count: number }
+    userHasAnsweredQuestions = answeredCount.count > 0
+  }
+
+  // Get last activity timestamp (most recent post, comment, or poll response)
+  const lastActivity = db
+    .prepare(`
+      SELECT MAX(created_at) as last_activity FROM (
+        SELECT created_at FROM posts
+        UNION ALL
+        SELECT created_at FROM comments
+        UNION ALL
+        SELECT created_at FROM poll_responses
+      )
+    `)
+    .get() as { last_activity: string | null }
+
+  return {
+    totalPosts: totalPosts.count,
+    totalUsers: totalUsers.count,
+    activeUsers: activeUsers.count,
+    totalQuestions: totalQuestions.count,
+    unansweredQuestions,
+    userHasAnsweredQuestions,
+    lastActivity: lastActivity.last_activity,
+  }
+}

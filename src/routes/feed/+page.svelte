@@ -1,6 +1,7 @@
 <script lang="ts">
 import { goto } from '$app/navigation'
 import FeedHeader from '$lib/components/FeedHeader.svelte'
+import PlatformStats from '$lib/components/PlatformStats.svelte'
 import PostCard from '$lib/components/PostCard.svelte'
 import type { PageData } from './$types'
 
@@ -12,6 +13,36 @@ let { data }: Props = $props()
 
 // Get user from server-side data
 let currentUser = $state(data.user)
+
+function jumpToNextUnanswered() {
+  // Find the first unanswered question (poll that user hasn't responded to)
+  const unansweredPost = data.posts.find((post) => {
+    // Must be a poll (not text)
+    if (post.post_type === 'text') return false
+
+    // Must not have been answered by the user (check userResponse property)
+    return !post.userResponse
+  })
+
+  if (unansweredPost) {
+    // Scroll to the post
+    const postElement = document.getElementById(`post-${unansweredPost.id}`)
+    if (postElement) {
+      postElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      })
+
+      // Add a brief highlight effect
+      postElement.style.outline = '3px solid var(--color-primary)'
+      postElement.style.borderRadius = '8px'
+      setTimeout(() => {
+        postElement.style.outline = ''
+        postElement.style.borderRadius = ''
+      }, 2000)
+    }
+  }
+}
 
 function formatTimeAgo(dateString: string) {
   const date = new Date(dateString)
@@ -82,6 +113,9 @@ async function performLogout() {
   <!-- Header -->
   <FeedHeader {currentUser} onLogout={performLogout} />
 
+  <!-- Platform Statistics -->
+  <PlatformStats stats={data.stats} onJumpToUnanswered={jumpToNextUnanswered} />
+
   <!-- Feed -->
   <div class="feed">
     {#if data.posts.length === 0}
@@ -99,13 +133,15 @@ async function performLogout() {
       </div>
     {:else}
       {#each data.posts as post (post.id)}
-        <PostCard
-          {post}
-          {currentUser}
-          {formatTimeAgo}
-          {getPostTypeIcon}
-          {getPostTypeLabel}
-        />
+        <div id="post-{post.id}">
+          <PostCard
+            {post}
+            {currentUser}
+            {formatTimeAgo}
+            {getPostTypeIcon}
+            {getPostTypeLabel}
+          />
+        </div>
       {/each}
     {/if}
   </div>

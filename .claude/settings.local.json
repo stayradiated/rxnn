@@ -13,7 +13,9 @@
       "Bash(rg:*)",
       "Bash(npm run check:*)",
       "Bash(npm run tidy:*)",
-      "Bash(sqlite-utils schema:*)"
+      "Bash(sqlite-utils schema:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run:*)"
     ],
     "deny": []
   }
