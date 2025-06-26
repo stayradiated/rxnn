@@ -140,7 +140,7 @@ async function submitUpdate(event) {
           📊 Rating Scale Poll
         {/if}
       </span>
-      <span class="author-info">by @{data.post.username}</span>
+      <span class="author-info">@{data.post.username} asked</span>
     </div>
 
     <form onsubmit={submitUpdate}>

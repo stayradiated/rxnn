@@ -4,6 +4,15 @@ import Database from 'better-sqlite3'
 // Database setup and schema
 let db: Database.Database
 
+type User = {
+  id: number
+  token: string
+  username: string
+  created_at: Date
+  updated_at: Date
+  last_seen: Date
+}
+
 export function initDatabase() {
   // Use data directory for production, local file for development
   const dbPath = process.env.DATABASE_PATH || join(process.cwd(), 'platform.db')
@@ -31,13 +40,6 @@ function createTables() {
       last_seen DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `)
-
-  // Add avatar column if it doesn't exist (for existing databases)
-  try {
-    db.exec('ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT "😊"')
-  } catch (_error) {
-    // Column already exists, ignore error
-  }
 
   // Posts table - text posts and polls
   db.exec(`
@@ -112,18 +114,18 @@ export function getDatabase() {
 }
 
 // User operations
-export function createUser(token: string, username: string, avatar = '😊') {
+export function createUser(token: string, username: string): User {
   const db = getDatabase()
 
   const result = db
     .prepare(`
-      INSERT INTO users (token, username, avatar) 
-      VALUES (?, ?, ?) 
+      INSERT INTO users (token, username)
+      VALUES (?, ?)
       RETURNING *
     `)
-    .get(token, username, avatar)
+    .get(token, username)
 
-  return result
+  return result as User
 }
 
 export function findUserByToken(token: string) {
@@ -146,11 +148,7 @@ export function updateLastSeen(userId: number) {
     .run(userId)
 }
 
-export function updateUserProfile(
-  userId: number,
-  username?: string,
-  avatar?: string,
-) {
+export function updateUserProfile(userId: number, username?: string) {
   const db = getDatabase()
 
   // Build dynamic query based on what fields are being updated
@@ -160,11 +158,6 @@ export function updateUserProfile(
   if (username !== undefined) {
     updates.push('username = ?')
     values.push(username)
-  }
-
-  if (avatar !== undefined) {
-    updates.push('avatar = ?')
-    values.push(avatar)
   }
 
   if (updates.length === 0) {
@@ -215,8 +208,8 @@ export function createPost(
 
   const result = db
     .prepare(`
-      INSERT INTO posts (user_id, title, content, post_type, poll_config) 
-      VALUES (?, ?, ?, ?, ?) 
+      INSERT INTO posts (user_id, title, content, post_type, poll_config)
+      VALUES (?, ?, ?, ?, ?)
       RETURNING *
     `)
     .get(userId, title, content, postType, configJson)
@@ -229,10 +222,9 @@ export function getPostsForFeed(_userId?: number) {
 
   const posts = db
     .prepare(`
-      SELECT 
+      SELECT
         p.*,
         u.username,
-        u.avatar,
         (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
         (SELECT COUNT(*) FROM poll_responses pr WHERE pr.post_id = p.id) as response_count
       FROM posts p
@@ -252,10 +244,9 @@ export function getPostsForFeedWithDetails(userId?: number) {
 
   const posts = db
     .prepare(`
-      SELECT 
+      SELECT
         p.*,
         u.username,
-        u.avatar,
         (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
         (SELECT COUNT(*) FROM poll_responses pr WHERE pr.post_id = p.id) as response_count
       FROM posts p
@@ -301,8 +292,8 @@ export function getPollAggregates(postId: number) {
   // Get all responses for aggregation
   const responses = db
     .prepare(`
-      SELECT response_data 
-      FROM poll_responses 
+      SELECT response_data
+      FROM poll_responses
       WHERE post_id = ?
     `)
     .all(postId)
@@ -402,10 +393,9 @@ export function getPostById(id: number) {
 
   const post = db
     .prepare(`
-      SELECT 
+      SELECT
         p.*,
-        u.username,
-        u.avatar
+        u.username
       FROM posts p
       JOIN users u ON p.user_id = u.id
       WHERE p.id = ?
@@ -445,7 +435,7 @@ export function updatePost(
 
   const result = db
     .prepare(`
-      UPDATE posts 
+      UPDATE posts
       SET title = ?, content = ?, post_type = ?, poll_config = ?
       WHERE id = ? AND user_id = ?
       RETURNING *
@@ -475,8 +465,8 @@ export function createComment(userId: number, postId: number, content: string) {
 
   const result = db
     .prepare(`
-      INSERT INTO comments (user_id, post_id, content) 
-      VALUES (?, ?, ?) 
+      INSERT INTO comments (user_id, post_id, content)
+      VALUES (?, ?, ?)
       RETURNING *
     `)
     .get(userId, postId, content)
@@ -489,10 +479,9 @@ export function getCommentsForPost(postId: number) {
 
   const comments = db
     .prepare(`
-      SELECT 
+      SELECT
         c.*,
-        u.username,
-        u.avatar
+        u.username
       FROM comments c
       JOIN users u ON c.user_id = u.id
       WHERE c.post_id = ?
@@ -515,10 +504,10 @@ export function submitPollResponse(
 
   return db
     .prepare(`
-      INSERT INTO poll_responses (user_id, post_id, response_data) 
+      INSERT INTO poll_responses (user_id, post_id, response_data)
       VALUES (?, ?, ?)
-      ON CONFLICT (user_id, post_id) 
-      DO UPDATE SET 
+      ON CONFLICT (user_id, post_id)
+      DO UPDATE SET
         response_data = excluded.response_data,
         updated_at = CURRENT_TIMESTAMP
     `)
@@ -530,8 +519,8 @@ export function getUserPollResponse(userId: number, postId: number) {
 
   const response = db
     .prepare(`
-      SELECT response_data 
-      FROM poll_responses 
+      SELECT response_data
+      FROM poll_responses
       WHERE user_id = ? AND post_id = ?
     `)
     .get(userId, postId)
@@ -546,8 +535,8 @@ export function getPollResults(postId: number) {
 
   const responses = db
     .prepare(`
-      SELECT response_data 
-      FROM poll_responses 
+      SELECT response_data
+      FROM poll_responses
       WHERE post_id = ?
     `)
     .all(postId)

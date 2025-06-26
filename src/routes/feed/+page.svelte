@@ -1,10 +1,7 @@
 <script lang="ts">
-import { dev } from '$app/environment'
 import { goto } from '$app/navigation'
 import FeedHeader from '$lib/components/FeedHeader.svelte'
-import LogoutModal from '$lib/components/LogoutModal.svelte'
 import PostCard from '$lib/components/PostCard.svelte'
-import { onMount } from 'svelte'
 import type { PageData } from './$types'
 
 interface Props {
@@ -15,19 +12,6 @@ let { data }: Props = $props()
 
 // Get user from server-side data
 let currentUser = $state(data.user)
-
-// Logout confirmation flow (only used in production)
-let showLogoutModal = $state(false)
-let tokenConfirmation = $state('')
-let logoutError = $state('')
-
-onMount(() => {
-  // Server-side authentication check via hooks.server.ts
-  // If user is null, redirect to login
-  if (!currentUser) {
-    goto('/login')
-  }
-})
 
 function formatTimeAgo(dateString: string) {
   const date = new Date(dateString)
@@ -72,34 +56,6 @@ function getPostTypeLabel(postType: string) {
   }
 }
 
-async function startLogout() {
-  // In development mode, logout instantly without any modal or confirmation
-  if (dev) {
-    await performLogout()
-    return
-  }
-
-  // In production, this function shouldn't be called since button is hidden
-  // But if it is, just perform logout without modal since there's no logout button in production
-  await performLogout()
-}
-
-function cancelLogout() {
-  showLogoutModal = false
-  tokenConfirmation = ''
-  logoutError = ''
-}
-
-async function confirmLogout() {
-  if (tokenConfirmation.trim() !== currentUser?.token) {
-    logoutError =
-      'Token does not match. Please copy and paste your token exactly.'
-    return
-  }
-
-  await performLogout()
-}
-
 async function performLogout() {
   try {
     // Call logout API to invalidate session cookie
@@ -124,7 +80,7 @@ async function performLogout() {
 
 <main class="container">
   <!-- Header -->
-  <FeedHeader {currentUser} onStartLogout={startLogout} />
+  <FeedHeader {currentUser} onLogout={performLogout} />
 
   <!-- Feed -->
   <div class="feed">
@@ -153,16 +109,6 @@ async function performLogout() {
       {/each}
     {/if}
   </div>
-
-  <!-- Logout Confirmation Modal (only shown in production) -->
-  <LogoutModal
-    show={showLogoutModal}
-    token={currentUser?.token || ''}
-    bind:tokenConfirmation
-    bind:logoutError
-    onCancel={cancelLogout}
-    onConfirm={confirmLogout}
-  />
 </main>
 
 <style>

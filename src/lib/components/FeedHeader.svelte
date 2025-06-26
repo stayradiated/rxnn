@@ -4,10 +4,10 @@ import { goto } from '$app/navigation'
 
 interface Props {
   currentUser?: any
-  onStartLogout: () => void
+  onLogout: () => void
 }
 
-let { currentUser = null, onStartLogout }: Props = $props()
+let { currentUser = null, onLogout }: Props = $props()
 
 function createTextPost() {
   goto('/post/text')
@@ -20,17 +20,16 @@ function createPoll() {
 
 <header class="header">
   <div class="header-content">
-    <h1>🗣️ Anonymous Voice</h1>
+    <h1>🗣️ Rxnn</h1>
     {#if currentUser}
       <div class="user-info">
         <div class="user-profile">
-          <span class="user-avatar">{currentUser.avatar || '😊'}</span>
           <span class="username">@{currentUser.username}</span>
         </div>
         <div class="user-actions">
           <a href="/profile" class="btn-profile">Profile</a>
           {#if dev}
-            <button onclick={onStartLogout} class="btn-logout">Logout</button>
+            <button onclick={onLogout} class="btn-logout">Logout</button>
           {/if}
         </div>
       </div>
@@ -73,19 +72,6 @@ function createPoll() {
   .user-profile {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-  }
-
-  .user-avatar {
-    font-size: 1.2rem;
-    background: var(--color-surface-alt);
-    border-radius: 50%;
-    width: 2rem;
-    height: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid var(--color-border);
   }
 
   .username {

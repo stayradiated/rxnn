@@ -117,8 +117,7 @@ async function submitComment() {
         {getPostTypeIcon(post.post_type)} {getPostTypeLabel(post.post_type)}
       </span>
       <span class="post-author">
-        <span class="post-author-avatar">{post.avatar || '😊'}</span>
-        by {post.username}
+        @{post.username} asked
       </span>
       <span class="post-time">{formatTimeAgo(post.created_at)}</span>
     </div>
@@ -226,21 +225,6 @@ async function submitComment() {
     color: var(--color-text-secondary);
     font-size: 0.9rem;
     font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .post-author-avatar {
-    font-size: 1rem;
-    background: var(--color-surface-alt);
-    border-radius: 50%;
-    width: 1.5rem;
-    height: 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--color-border);
   }
 
   .post-time {

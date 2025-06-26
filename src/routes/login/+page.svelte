@@ -39,6 +39,7 @@ async function confirmUsername() {
     const response = await fetch('/api/auth/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: selectedUsername.trim() }),
     })
 
     if (response.ok) {

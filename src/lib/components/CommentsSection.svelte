@@ -49,8 +49,7 @@ function submitComment() {
             <div class="comment">
               <div class="comment-header">
                 <div class="comment-author">
-                  <span class="comment-avatar">{comment.avatar || '😊'}</span>
-                  <span class="comment-username">{comment.username}</span>
+                  <span class="comment-username">@{comment.username}</span>
                 </div>
                 <span class="comment-time">{formatTimeAgo(comment.created_at)}</span>
               </div>
@@ -132,19 +131,6 @@ function submitComment() {
   .comment-author {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-  }
-
-  .comment-avatar {
-    font-size: 0.9rem;
-    background: var(--color-surface-alt);
-    border-radius: 50%;
-    width: 1.2rem;
-    height: 1.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--color-border);
   }
 
   .comment-username {
