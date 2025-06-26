@@ -557,6 +557,66 @@ export function getCommentsForPost(postId: number) {
   return comments
 }
 
+export function updateComment(id: number, userId: number, content: string) {
+  const db = getDatabase()
+
+  // First check if the comment exists and belongs to the user
+  const existingComment = db
+    .prepare('SELECT user_id FROM comments WHERE id = ?')
+    .get(id)
+
+  if (!existingComment) {
+    throw new Error('Comment not found')
+  }
+
+  if (existingComment.user_id !== userId) {
+    throw new Error('Unauthorized: You can only edit your own comments')
+  }
+
+  const result = db
+    .prepare(`
+      UPDATE comments
+      SET content = ?
+      WHERE id = ? AND user_id = ?
+      RETURNING *
+    `)
+    .get(content, id, userId)
+
+  if (!result) {
+    throw new Error('Failed to update comment')
+  }
+
+  return result
+}
+
+export function deleteComment(id: number, userId: number) {
+  const db = getDatabase()
+
+  // First check if the comment exists and belongs to the user
+  const existingComment = db
+    .prepare('SELECT user_id FROM comments WHERE id = ?')
+    .get(id)
+
+  if (!existingComment) {
+    throw new Error('Comment not found')
+  }
+
+  if (existingComment.user_id !== userId) {
+    throw new Error('Unauthorized: You can only delete your own comments')
+  }
+
+  // Delete the comment (cascading will handle hearts)
+  const result = db
+    .prepare('DELETE FROM comments WHERE id = ? AND user_id = ?')
+    .run(id, userId)
+
+  if (result.changes === 0) {
+    throw new Error('Failed to delete comment')
+  }
+
+  return { success: true }
+}
+
 // Poll response operations
 export function submitPollResponse(
   userId: number,

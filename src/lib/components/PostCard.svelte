@@ -21,6 +21,8 @@ interface Props {
   postComments?: any[]
   newComment?: string
   commentSubmitting?: boolean
+  editingCommentId?: number | null
+  editingCommentContent?: string
   // Heart state for this post
   heartCount?: number
   userHearted?: boolean
@@ -41,6 +43,8 @@ let {
   postComments = $bindable(post.comments || []),
   newComment = $bindable(''),
   commentSubmitting = $bindable(false),
+  editingCommentId = $bindable(null),
+  editingCommentContent = $bindable(''),
   heartCount = $bindable(post.heartCount || 0),
   userHearted = $bindable(post.userHearted || false),
 }: Props = $props()
@@ -157,6 +161,81 @@ async function submitComment() {
     commentSubmitting = false
   }
 }
+
+// Comment edit/delete functions
+function startEditingComment(comment: any) {
+  editingCommentId = comment.id
+  editingCommentContent = comment.content
+}
+
+function cancelEditingComment() {
+  editingCommentId = null
+  editingCommentContent = ''
+}
+
+async function saveEditedComment() {
+  if (!editingCommentId || !editingCommentContent?.trim()) return
+
+  try {
+    const response = await fetch(`/api/comments/${editingCommentId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ content: editingCommentContent.trim() }),
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      // Update the comment in the list
+      postComments = postComments.map((comment: any) =>
+        comment.id === editingCommentId
+          ? { ...comment, content: data.comment.content }
+          : comment,
+      )
+      editingCommentId = null
+      editingCommentContent = ''
+    } else {
+      const data = await response.json()
+      alert(`Failed to update comment: ${data.error || 'Unknown error'}`)
+    }
+  } catch (error) {
+    console.error('Error updating comment:', error)
+    alert('Failed to update comment. Please try again.')
+  }
+}
+
+async function deleteComment(commentId: number) {
+  if (
+    !confirm(
+      'Are you sure you want to delete this comment? This action cannot be undone.',
+    )
+  ) {
+    return
+  }
+
+  try {
+    const response = await fetch(`/api/comments/${commentId}`, {
+      method: 'DELETE',
+    })
+
+    if (response.ok) {
+      // Remove comment from the list
+      postComments = postComments.filter(
+        (comment: any) => comment.id !== commentId,
+      )
+
+      // Update comment count
+      post.comment_count -= 1
+    } else {
+      const data = await response.json()
+      alert(`Failed to delete comment: ${data.error || 'Unknown error'}`)
+    }
+  } catch (error) {
+    console.error('Error deleting comment:', error)
+    alert('Failed to delete comment. Please try again.')
+  }
+}
 </script>
 
 <article class="post-card">
@@ -245,17 +324,62 @@ async function submitComment() {
                 <span class="comment-username">@{comment.username}</span>
                 <span class="comment-time">{formatTimeAgo(comment.created_at)}</span>
               </div>
-              <div class="comment-content">{comment.content}</div>
+
+              {#if editingCommentId === comment.id}
+                <!-- Edit Comment Form -->
+                <div class="comment-edit-form">
+                  <textarea
+                    bind:value={editingCommentContent}
+                    rows="3"
+                    class="comment-edit-textarea"></textarea>
+                  <div class="comment-edit-actions">
+                    <button
+                      onclick={saveEditedComment}
+                      class="btn-primary btn-small"
+                      disabled={!editingCommentContent?.trim()}>
+                      Save
+                    </button>
+                    <button
+                      onclick={cancelEditingComment}
+                      class="btn-secondary btn-small">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              {:else}
+                <!-- Normal Comment Display -->
+                <div class="comment-content">{comment.content}</div>
+              {/if}
+
               <div class="comment-actions">
-                {#if currentUser}
-                  <HeartButton
-                    targetType="comment"
-                    targetId={comment.id}
-                    heartCount={comment.heartCount || 0}
-                    userHearted={comment.userHearted || false}
-                  />
-                {:else if comment.heartCount > 0}
-                  <span class="heart-count">❤️ {comment.heartCount}</span>
+                <div class="comment-hearts">
+                  {#if currentUser}
+                    <HeartButton
+                      targetType="comment"
+                      targetId={comment.id}
+                      heartCount={comment.heartCount || 0}
+                      userHearted={comment.userHearted || false}
+                    />
+                  {:else if comment.heartCount > 0}
+                    <span class="heart-count">❤️ {comment.heartCount}</span>
+                  {/if}
+                </div>
+
+                {#if currentUser && currentUser.id === comment.user_id && editingCommentId !== comment.id}
+                  <div class="comment-owner-actions">
+                    <button
+                      onclick={() => startEditingComment(comment)}
+                      class="comment-edit-btn"
+                      title="Edit comment">
+                      ✏️
+                    </button>
+                    <button
+                      onclick={() => deleteComment(comment.id)}
+                      class="comment-delete-btn"
+                      title="Delete comment">
+                      🗑️
+                    </button>
+                  </div>
                 {/if}
               </div>
             </div>
@@ -485,7 +609,81 @@ async function submitComment() {
 
   .comment-actions {
     display: flex;
+    justify-content: space-between;
     align-items: center;
+    gap: 0.5rem;
+  }
+
+  .comment-hearts {
+    display: flex;
+    align-items: center;
+  }
+
+  .comment-owner-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .comment-edit-btn,
+  .comment-delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+  }
+
+  .comment-edit-btn {
+    color: var(--color-text-secondary);
+  }
+
+  .comment-edit-btn:hover {
+    background: var(--color-surface-alt);
+    color: var(--color-primary);
+  }
+
+  .comment-delete-btn {
+    color: var(--color-text-secondary);
+  }
+
+  .comment-delete-btn:hover {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  .comment-edit-form {
+    margin: 0.75rem 0;
+  }
+
+  .comment-edit-textarea {
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    resize: vertical;
+    min-height: 60px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: inherit;
+  }
+
+  .comment-edit-textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  .comment-edit-actions {
+    display: flex;
     gap: 0.5rem;
   }
 
@@ -538,6 +736,28 @@ async function submitComment() {
 
   .btn-primary:disabled {
     background: var(--color-text-muted);
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--color-border);
+    border-color: var(--color-text-secondary);
+  }
+
+  .btn-secondary:disabled {
+    background: var(--color-surface);
+    color: var(--color-text-muted);
     cursor: not-allowed;
   }
 
