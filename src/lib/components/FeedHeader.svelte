@@ -37,10 +37,10 @@ function createPoll() {
 
   <div class="header-actions">
     <button onclick={createTextPost} class="btn-primary btn-text">
-      💬 Create Text Post
+      💬 Share a Message
     </button>
     <button onclick={createPoll} class="btn-primary btn-poll">
-      📊 Create Poll
+      📊 Ask a Question
     </button>
   </div>
 </header>
