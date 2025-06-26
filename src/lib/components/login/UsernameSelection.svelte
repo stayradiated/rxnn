@@ -32,7 +32,7 @@ let { username, isLoading, onGenerateNew, onConfirm, onBack }: Props = $props()
       onclick={onConfirm}
       class="btn-primary"
       disabled={isLoading}>
-      {isLoading ? 'Creating Account...' : '✓ I Like This Name'}
+      {isLoading ? 'Creating Account...' : '✅ Create Account'}
     </button>
   </div>
 

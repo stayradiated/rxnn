@@ -1,4 +1,6 @@
 <script lang="ts">
+import HeartButton from './HeartButton.svelte'
+
 interface Props {
   postId: number
   commentCount: number
@@ -9,6 +11,7 @@ interface Props {
   onToggleComments: () => void
   onSubmitComment: () => void
   formatTimeAgo: (dateString: string) => string
+  currentUser?: any
 }
 
 let {
@@ -21,6 +24,7 @@ let {
   onToggleComments,
   onSubmitComment,
   formatTimeAgo,
+  currentUser = null,
 }: Props = $props()
 
 function toggleComments() {
@@ -54,6 +58,18 @@ function submitComment() {
                 <span class="comment-time">{formatTimeAgo(comment.created_at)}</span>
               </div>
               <div class="comment-content">{comment.content}</div>
+              <div class="comment-actions">
+                {#if currentUser}
+                  <HeartButton
+                    targetType="comment"
+                    targetId={comment.id}
+                    heartCount={comment.heartCount || 0}
+                    userHearted={comment.userHearted || false}
+                  />
+                {:else if comment.heartCount > 0}
+                  <span class="heart-count">❤️ {comment.heartCount}</span>
+                {/if}
+              </div>
             </div>
           {/each}
         </div>
@@ -148,6 +164,21 @@ function submitComment() {
     color: var(--color-text);
     line-height: 1.5;
     font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .comment-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .heart-count {
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
   }
 
   .comment-form {

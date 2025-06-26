@@ -1,6 +1,7 @@
 <script lang="ts">
 import { goto } from '$app/navigation'
 import CommentsSection from './CommentsSection.svelte'
+import HeartButton from './HeartButton.svelte'
 import PollSection from './PollSection.svelte'
 
 interface Props {
@@ -19,6 +20,9 @@ interface Props {
   postComments?: any[]
   newComment?: string
   commentSubmitting?: boolean
+  // Heart state for this post
+  heartCount?: number
+  userHearted?: boolean
 }
 
 let {
@@ -35,6 +39,8 @@ let {
   postComments = $bindable(post.comments || []),
   newComment = $bindable(''),
   commentSubmitting = $bindable(false),
+  heartCount = $bindable(post.heartCount || 0),
+  userHearted = $bindable(post.userHearted || false),
 }: Props = $props()
 
 // Poll interaction functions
@@ -67,7 +73,11 @@ async function submitPollResponse(responseData: any) {
 
 function editPollResponse() {
   showPollResults = false
-  pollResponses = userResponse
+
+  // Populate form with current response
+  if (userResponse) {
+    pollResponses = { ...userResponse }
+  }
 }
 
 // Comments functions
@@ -131,12 +141,32 @@ async function submitComment() {
           <span class="stat">
             💬 {post.comment_count} comments
           </span>
+          {#if currentUser}
+            <HeartButton
+              targetType="post"
+              targetId={post.id}
+              bind:heartCount
+              bind:userHearted
+            />
+          {:else}
+            <span class="stat">❤️ {heartCount}</span>
+          {/if}
         </div>
       {:else}
         <div class="engagement-stats">
           <span class="stat">
             💬 {post.comment_count} comments
           </span>
+          {#if currentUser}
+            <HeartButton
+              targetType="post"
+              targetId={post.id}
+              bind:heartCount
+              bind:userHearted
+            />
+          {:else}
+            <span class="stat">❤️ {heartCount}</span>
+          {/if}
         </div>
       {/if}
 
@@ -179,6 +209,7 @@ async function submitComment() {
     onToggleComments={toggleComments}
     onSubmitComment={submitComment}
     {formatTimeAgo}
+    {currentUser}
   />
 </article>
 

@@ -10,7 +10,10 @@
       "WebFetch(domain:lucia-next.pages.dev)",
       "Bash(rm:*)",
       "Bash(rip:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(npm run check:*)",
+      "Bash(npm run tidy:*)",
+      "Bash(sqlite-utils schema:*)"
     ],
     "deny": []
   }

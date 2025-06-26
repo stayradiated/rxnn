@@ -36,7 +36,6 @@ export const POST: RequestHandler = async (event) => {
           user: {
             id: result.user.id,
             username: result.user.username,
-            avatar: result.user.avatar,
             token: result.user.token,
           },
         })
@@ -77,7 +76,6 @@ export const POST: RequestHandler = async (event) => {
         user: {
           id: user.id,
           username: user.username,
-          avatar: user.avatar,
           token: user.token,
         },
       })

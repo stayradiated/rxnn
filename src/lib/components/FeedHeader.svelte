@@ -27,7 +27,6 @@ function createPoll() {
           <span class="username">@{currentUser.username}</span>
         </div>
         <div class="user-actions">
-          <a href="/profile" class="btn-profile">Profile</a>
           {#if dev}
             <button onclick={onLogout} class="btn-logout">Logout</button>
           {/if}

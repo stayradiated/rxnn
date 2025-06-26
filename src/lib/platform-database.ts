@@ -83,6 +83,19 @@ function createTables() {
     )
   `)
 
+  // Hearts table for likes on posts and comments
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS hearts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      target_type TEXT NOT NULL, -- 'post' or 'comment'
+      target_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+      UNIQUE (user_id, target_type, target_id)
+    )
+  `)
+
   // Sessions table for Lucia auth
   db.exec(`
     CREATE TABLE IF NOT EXISTS session (
@@ -102,6 +115,8 @@ function createTables() {
     CREATE INDEX IF NOT EXISTS idx_comments_user_id ON comments (user_id);
     CREATE INDEX IF NOT EXISTS idx_poll_responses_post_id ON poll_responses (post_id);
     CREATE INDEX IF NOT EXISTS idx_poll_responses_user_id ON poll_responses (user_id);
+    CREATE INDEX IF NOT EXISTS idx_hearts_target ON hearts (target_type, target_id);
+    CREATE INDEX IF NOT EXISTS idx_hearts_user_id ON hearts (user_id);
     CREATE INDEX IF NOT EXISTS idx_session_user_id ON session (user_id);
   `)
 }
@@ -134,48 +149,12 @@ export function findUserByToken(token: string) {
   return db.prepare('SELECT * FROM users WHERE token = ?').get(token)
 }
 
-export function findUserById(id: number) {
-  const db = getDatabase()
-
-  return db.prepare('SELECT * FROM users WHERE id = ?').get(id)
-}
-
 export function updateLastSeen(userId: number) {
   const db = getDatabase()
 
   return db
     .prepare('UPDATE users SET last_seen = CURRENT_TIMESTAMP WHERE id = ?')
     .run(userId)
-}
-
-export function updateUserProfile(userId: number, username?: string) {
-  const db = getDatabase()
-
-  // Build dynamic query based on what fields are being updated
-  const updates: string[] = []
-  const values: any[] = []
-
-  if (username !== undefined) {
-    updates.push('username = ?')
-    values.push(username)
-  }
-
-  if (updates.length === 0) {
-    throw new Error('No fields to update')
-  }
-
-  updates.push('updated_at = CURRENT_TIMESTAMP')
-  values.push(userId)
-
-  const query = `UPDATE users SET ${updates.join(', ')} WHERE id = ? RETURNING *`
-
-  const result = db.prepare(query).get(...values)
-
-  if (!result) {
-    throw new Error('User not found')
-  }
-
-  return result
 }
 
 export function isUsernameAvailable(username: string, excludeUserId?: number) {
@@ -255,6 +234,9 @@ export function getPostsForFeedWithDetails(userId?: number) {
     `)
     .all()
 
+  const postIds = posts.map((post: any) => post.id)
+  const postHearts = getHeartsForPosts(postIds, userId)
+
   return posts.map((post: any) => {
     const postData = {
       ...post,
@@ -262,15 +244,31 @@ export function getPostsForFeedWithDetails(userId?: number) {
     }
 
     // Get comments for this post
-    postData.comments = getCommentsForPost(post.id)
+    const comments = getCommentsForPost(post.id)
+    const commentIds = comments.map((comment: any) => comment.id)
+    const commentHearts = getHeartsForComments(commentIds, userId)
+
+    // Add heart data to comments
+    postData.comments = comments.map((comment: any) => ({
+      ...comment,
+      heartCount: commentHearts[comment.id]?.count || 0,
+      userHearted: commentHearts[comment.id]?.userHearted || false,
+    }))
+
+    // Add heart data to post
+    postData.heartCount = postHearts[post.id]?.count || 0
+    postData.userHearted = postHearts[post.id]?.userHearted || false
 
     // Get poll results if it's a poll
     if (post.post_type !== 'text') {
-      postData.pollResults = getPollAggregates(post.id)
-
       // Get user's response if authenticated
       if (userId) {
         postData.userResponse = getUserPollResponse(userId, post.id)
+
+        // Only show poll results if user has already submitted a response
+        if (postData.userResponse) {
+          postData.pollResults = getPollAggregates(post.id)
+        }
       }
     }
 
@@ -530,23 +528,131 @@ export function getUserPollResponse(userId: number, postId: number) {
   return JSON.parse(response.response_data)
 }
 
-export function getPollResults(postId: number) {
+// Heart operations
+export function toggleHeart(
+  userId: number,
+  targetType: 'post' | 'comment',
+  targetId: number,
+) {
   const db = getDatabase()
 
-  const responses = db
+  // Check if heart already exists
+  const existingHeart = db
     .prepare(`
-      SELECT response_data
-      FROM poll_responses
-      WHERE post_id = ?
+      SELECT id FROM hearts
+      WHERE user_id = ? AND target_type = ? AND target_id = ?
     `)
-    .all(postId)
+    .get(userId, targetType, targetId)
 
-  const results = responses.map((r: any) => JSON.parse(r.response_data))
-
-  return {
-    totalResponses: results.length,
-    responses: results,
+  if (existingHeart) {
+    // Remove heart
+    db.prepare(`
+      DELETE FROM hearts
+      WHERE user_id = ? AND target_type = ? AND target_id = ?
+    `).run(userId, targetType, targetId)
+    return { hearted: false }
   }
+  // Add heart
+  db.prepare(`
+      INSERT INTO hearts (user_id, target_type, target_id)
+      VALUES (?, ?, ?)
+    `).run(userId, targetType, targetId)
+  return { hearted: true }
+}
+
+export function getHeartsForPosts(postIds: number[], userId?: number) {
+  if (postIds.length === 0) return {}
+
+  const db = getDatabase()
+  const placeholders = postIds.map(() => '?').join(',')
+
+  // Get heart counts for all posts
+  const counts = db
+    .prepare(`
+      SELECT target_id, COUNT(*) as count
+      FROM hearts
+      WHERE target_type = 'post' AND target_id IN (${placeholders})
+      GROUP BY target_id
+    `)
+    .all(...postIds)
+
+  const result: { [postId: number]: { count: number; userHearted: boolean } } =
+    {}
+
+  // Initialize with zero counts
+  postIds.forEach((id) => {
+    result[id] = { count: 0, userHearted: false }
+  })
+
+  // Set actual counts
+  counts.forEach((row: any) => {
+    result[row.target_id].count = row.count
+  })
+
+  // Get user hearts if userId provided
+  if (userId) {
+    const userHearts = db
+      .prepare(`
+        SELECT target_id
+        FROM hearts
+        WHERE target_type = 'post' AND target_id IN (${placeholders}) AND user_id = ?
+      `)
+      .all(...postIds, userId)
+
+    userHearts.forEach((row: any) => {
+      result[row.target_id].userHearted = true
+    })
+  }
+
+  return result
+}
+
+export function getHeartsForComments(commentIds: number[], userId?: number) {
+  if (commentIds.length === 0) return {}
+
+  const db = getDatabase()
+  const placeholders = commentIds.map(() => '?').join(',')
+
+  // Get heart counts for all comments
+  const counts = db
+    .prepare(`
+      SELECT target_id, COUNT(*) as count
+      FROM hearts
+      WHERE target_type = 'comment' AND target_id IN (${placeholders})
+      GROUP BY target_id
+    `)
+    .all(...commentIds)
+
+  const result: {
+    [commentId: number]: { count: number; userHearted: boolean }
+  } = {}
+
+  // Initialize with zero counts
+  commentIds.forEach((id) => {
+    result[id] = { count: 0, userHearted: false }
+  })
+
+  // Set actual counts
+  counts.forEach((row: any) => {
+    result[row.target_id].count = row.count
+  })
+
+  // Get user hearts if userId provided
+  if (userId) {
+    const userHearts = db
+      .prepare(`
+        SELECT target_id
+        FROM hearts
+        WHERE target_type = 'comment' AND target_id IN (${placeholders}) AND user_id = ?
+      `)
+      .all(...commentIds, userId)
+
+    userHearts.forEach((row: any) => {
+      result[row.target_id].userHearted = true
+    })
+  }
+
+  return result
 }
 
 // Initialize database on module load in production

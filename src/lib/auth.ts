@@ -16,7 +16,6 @@ export interface User {
   id: number
   token: string
   username: string
-  avatar: string
   created_at: string
   updated_at: string
   last_seen: string
@@ -59,7 +58,7 @@ export function validateSessionToken(token: string): SessionValidationResult {
   const row = db
     .prepare(`
     SELECT session.id, session.user_id, session.expires_at, 
-           users.id as user_id, users.token, users.username, users.avatar, 
+           users.id as user_id, users.token, users.username,
            users.created_at, users.updated_at, users.last_seen
     FROM session 
     INNER JOIN users ON users.id = session.user_id 
@@ -81,7 +80,6 @@ export function validateSessionToken(token: string): SessionValidationResult {
     id: row.user_id,
     token: row.token,
     username: row.username,
-    avatar: row.avatar,
     created_at: row.created_at,
     updated_at: row.updated_at,
     last_seen: row.last_seen,
@@ -102,18 +100,6 @@ export function invalidateSession(sessionId: string): void {
 export function deleteSession(sessionId: string): void {
   const db = getDatabase()
   db.prepare('DELETE FROM session WHERE id = ?').run(sessionId)
-}
-
-export function deleteUserSessions(userId: number): void {
-  const db = getDatabase()
-  db.prepare('DELETE FROM session WHERE user_id = ?').run(userId)
-}
-
-export function deleteExpiredSessions(): void {
-  const db = getDatabase()
-  db.prepare('DELETE FROM session WHERE expires_at <= ?').run(
-    Math.floor(Date.now() / 1000),
-  )
 }
 
 // Cookie management functions
