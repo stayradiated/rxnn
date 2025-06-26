@@ -72,7 +72,18 @@ $effect(() => {
     {#if post.pollResults && !editing}
       <!-- Show Poll Results -->
       <div class="poll-results">
-        <h4>Poll Results</h4>
+        <div class="poll-results-header">
+          <h4>Poll Results</h4>
+          {#if userResponse}
+            <button onclick={editResponse} class="edit-response-btn" title="Edit your response">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="m18.5 2.5 a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              Edit Response
+            </button>
+          {/if}
+        </div>
         {#if post.post_type === 'radio' && post.poll_config?.type === 'radio' && post.pollResults.type === 'radio'}
           {#each post.poll_config.options as option (option.id)}
             {@const result = post.pollResults.options.find(r => r.option_id === option.id)}
@@ -484,10 +495,45 @@ $effect(() => {
     margin-bottom: 1rem;
   }
 
+  .poll-results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
   .poll-results h4 {
     color: var(--color-primary-dark, #0c4a6e);
-    margin-bottom: 1rem;
+    margin: 0;
     font-size: 1.1rem;
+  }
+
+  .edit-response-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--color-surface, rgba(255, 255, 255, 0.7));
+    color: var(--color-text-secondary, #6b7280);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+  }
+
+  .edit-response-btn:hover {
+    background: var(--color-surface-hover, rgba(249, 250, 251, 0.9));
+    color: var(--color-text, #374151);
+    border-color: var(--color-border-hover, #d1d5db);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px var(--color-shadow, rgba(0, 0, 0, 0.1));
+  }
+
+  .edit-response-btn svg {
+    flex-shrink: 0;
   }
 
   .poll-result-item {
