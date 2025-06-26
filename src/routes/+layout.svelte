@@ -25,6 +25,7 @@ let { children }: Props = $props()
     --color-text-inverse: #ffffff;
     --color-primary: #2563eb;
     --color-primary-hover: #1d4ed8;
+    --color-primary-light: #eff6ff;
     --color-primary-dark: #0c4a6e;
     --color-success: #059669;
     --color-warning: #d97706;
@@ -49,6 +50,7 @@ let { children }: Props = $props()
       --color-text-inverse: #0f172a;
       --color-primary: #3b82f6;
       --color-primary-hover: #2563eb;
+      --color-primary-light: #1e3a8a;
       --color-primary-dark: #60a5fa;
       --color-success: #10b981;
       --color-warning: #f59e0b;
