@@ -75,8 +75,10 @@ async function submitPollResponse(responseData: any) {
         showPollResults = false
       }
 
-      // Update response count
-      post.response_count += 1
+      // Update response count only for new responses
+      if (data.isNewResponse) {
+        post = { ...post, response_count: post.response_count + 1 }
+      }
     } else {
       console.error('Failed to submit poll response')
     }
@@ -153,7 +155,7 @@ async function submitComment() {
       newComment = ''
 
       // Update comment count
-      post.comment_count += 1
+      post = { ...post, comment_count: post.comment_count + 1 }
     }
   } catch (error) {
     console.error('Error submitting comment:', error)
@@ -226,7 +228,7 @@ async function deleteComment(commentId: number) {
       )
 
       // Update comment count
-      post.comment_count -= 1
+      post = { ...post, comment_count: post.comment_count - 1 }
     } else {
       const data = await response.json()
       alert(`Failed to delete comment: ${data.error || 'Unknown error'}`)

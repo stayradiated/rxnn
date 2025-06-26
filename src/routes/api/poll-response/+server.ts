@@ -39,7 +39,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     }
 
     // Submit the response
-    submitPollResponse(user.id, postId, responseData)
+    const submissionResult = submitPollResponse(user.id, postId, responseData)
 
     // Get updated poll aggregates (no raw data exposed)
     const pollResults = getPollAggregates(postId)
@@ -47,11 +47,18 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     // Only include poll results if there are at least 5 total responses
     const includeResults = pollResults && pollResults.totalResponses >= 5
 
-    console.log('Poll response submitted by', user.username, 'for post', postId)
+    console.log(
+      'Poll response submitted by',
+      user.username,
+      'for post',
+      postId,
+      submissionResult.isNewResponse ? '(new)' : '(edit)',
+    )
 
     return json({
       success: true,
       pollResults: includeResults ? pollResults : null,
+      isNewResponse: submissionResult.isNewResponse,
     })
   } catch (error) {
     console.error('Error submitting poll response:', error)

@@ -627,7 +627,12 @@ export function submitPollResponse(
 
   const dataJson = JSON.stringify(responseData)
 
-  return db
+  // Check if user already has a response for this poll
+  const existingResponse = db
+    .prepare('SELECT id FROM poll_responses WHERE user_id = ? AND post_id = ?')
+    .get(userId, postId)
+
+  const result = db
     .prepare(`
       INSERT INTO poll_responses (user_id, post_id, response_data)
       VALUES (?, ?, ?)
@@ -637,6 +642,11 @@ export function submitPollResponse(
         updated_at = CURRENT_TIMESTAMP
     `)
     .run(userId, postId, dataJson)
+
+  return {
+    ...result,
+    isNewResponse: !existingResponse,
+  }
 }
 
 export function getUserPollResponse(userId: number, postId: number) {
