@@ -188,7 +188,7 @@ const handleSubmit: SubmitFunction = async () => {
                 type="number"
                 bind:value={scaleMin}
                 min="1"
-                max="10"
+                max="9"
                 disabled={isLoading}
               />
               <span>to</span>

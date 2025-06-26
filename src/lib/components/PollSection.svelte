@@ -9,9 +9,7 @@ interface Props {
 
 const { post }: Props = $props()
 
-const pollResults = $derived(post.pollResults)
 const userResponse = $derived(post.userResponse)
-const showResults = $derived(!!post.pollResults)
 
 let pollResponses = $state<ResponseData>({})
 let editing = $state(false)
@@ -81,14 +79,14 @@ $effect(() => {
 
 {#if post.post_type !== 'text'}
   <div class="poll-section">
-    {#if showResults && pollResults && !editing}
+    {#if post.pollResults && !editing}
       <!-- Show Poll Results -->
       <div class="poll-results">
         <h4>Poll Results</h4>
-        {#if post.post_type === 'radio' && post.poll_config?.type === 'radio'}
+        {#if post.post_type === 'radio' && post.poll_config?.type === 'radio' && post.pollResults.type === 'radio'}
           {#each post.poll_config.options as option (option.id)}
-            {@const result = pollResults.options.find(r => r.option_id === option.id)}
-            {@const percentage = result ? Math.round((result.count / pollResults.totalResponses) * 100) : 0}
+            {@const result = post.pollResults.options.find(r => r.option_id === option.id)}
+            {@const percentage = result ? Math.round((result.count / post.pollResults.totalResponses) * 100) : 0}
             {@const isUserChoice = userResponse?.selectedOption === option.id}
             <div class="poll-result-item" class:user-selected={isUserChoice}>
               <div class="result-header">
@@ -107,11 +105,13 @@ $effect(() => {
               </div>
             </div>
           {/each}
-        {:else if post.post_type === 'scale' && post.poll_config?.type === 'scale'}
+        {:else if post.post_type === 'scale' && post.poll_config?.type === 'scale' && post.pollResults.type === 'scale'}
+          {@const min = post.poll_config.min || 1}
+          {@const max = post.poll_config.max || 5}
           <div class="scale-results">
             <div class="scale-stats">
-              <span>Average: {pollResults.average?.toFixed(1) || 'N/A'}</span>
-              <span>Total responses: {pollResults.totalResponses || 0}</span>
+              <span>Average: {post.pollResults.average?.toFixed(1) || 'N/A'}</span>
+              <span>Total responses: {post.pollResults.totalResponses || 0}</span>
             </div>
 
             {#if post.poll_config.minLabel || post.poll_config.maxLabel}
@@ -126,18 +126,18 @@ $effect(() => {
             {/if}
 
             <div class="scale-chart">
-              {#each Array.from({length: post.poll_config.max - post.poll_config.min + 1}, (_, i) => post.poll_config.min + i) as value, index (index)}
-                {@const result = pollResults.distribution.find(r => r.value === value)}
+              {#each Array.from({length: max - min + 1}, (_, i) => min + i) as value, index (index)}
+                {@const result = post.pollResults.distribution.find(r => r.value === value)}
                 {@const count = result?.count || 0}
-                {@const percentage = result ? Math.round((result.count / pollResults.totalResponses) * 100) : 0}
+                {@const percentage = result ? Math.round((result.count / post.pollResults.totalResponses) * 100) : 0}
                 {@const isUserChoice = userResponse?.scaleValue === value}
-                {@const maxCount = Math.max(...pollResults.distribution?.map(d => d.count) || [1])}
+                {@const maxCount = Math.max(...post.pollResults.distribution?.map(d => d.count) || [1])}
                 {@const barHeight = maxCount > 0 ? (count / maxCount) * 100 : 0}
 
                 <div class="scale-bar-container" class:user-selected={isUserChoice}>
                   <div class="scale-bar-wrapper">
                     <div class="scale-bar" style:height="{barHeight}%">
-                      <div class="bar-count">{count}</div>
+                      <div class="bar-count">{count} ({percentage}%)</div>
                     </div>
                   </div>
                   <div class="scale-value">
@@ -155,9 +155,9 @@ $effect(() => {
         {/if}
 
         <!-- Special Options Stats -->
-        {#if pollResults.specialOptions}
+        {#if post.pollResults.specialOptions}
           <div class="special-stats">
-            {#each pollResults.specialOptions as option, index (index)}
+            {#each post.pollResults.specialOptions as option, index (index)}
               {#if option.count > 0}
                 <div class="special-stat">
                   <span class="special-label">
@@ -176,7 +176,7 @@ $effect(() => {
         {/if}
 
       </div>
-    {:else if userResponse && !pollResults && !editing}
+    {:else if userResponse && !post.pollResults && !editing}
       <!-- User has responded but results are hidden -->
       <div class="poll-pending">
         <div class="pending-message">
@@ -240,6 +240,8 @@ $effect(() => {
               </div>
             </div>
           {:else if post.post_type === 'scale' && post.poll_config?.type === 'scale'}
+            {@const min = post.poll_config.min || 1}
+            {@const max = post.poll_config.max || 5}
             <div class="scale-poll">
               <div class="scale-labels">
                 {#if post.poll_config.minLabel}
@@ -254,8 +256,8 @@ $effect(() => {
                   <input
                     type="range"
                     bind:value={pollResponses.scaleValue}
-                    min={post.poll_config.min}
-                    max={post.poll_config.max}
+                    {min}
+                    {max}
                     step="1"
                     class="scale-slider"
                     oninput={() => {
@@ -263,11 +265,11 @@ $effect(() => {
                     }}
                   />
                   <div class="slider-value">
-                    {pollResponses.scaleValue || post.poll_config.min}
+                    {pollResponses.scaleValue || min}
                   </div>
                 </div>
                 <div class="slider-ticks">
-                  {#each Array.from({length: post.poll_config.max - post.poll_config.min + 1}, (_, i) => post.poll_config.min + i) as value, index (index)}
+                  {#each Array.from({length: max - min + 1}, (_, i) => min + i) as value, index (index)}
                     <span class="tick-mark">{value}</span>
                   {/each}
                 </div>
