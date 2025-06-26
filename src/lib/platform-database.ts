@@ -259,7 +259,7 @@ export function getPostsForFeedWithDetails(userId?: number) {
         (SELECT COUNT(*) FROM poll_responses pr WHERE pr.post_id = p.id) as response_count
       FROM posts p
       JOIN users u ON p.user_id = u.id
-      ORDER BY p.sort_order DESC, p.created_at DESC
+      ORDER BY p.sort_order ASC, p.created_at ASC
     `)
     .all()
 
