@@ -123,61 +123,8 @@ async function submitComment() {
 <article class="post-card">
   <div class="post-header">
     <div class="post-meta">
-      <span class="post-type">
-        {getPostTypeIcon(post.post_type)} {getPostTypeLabel(post.post_type)}
-      </span>
-      <span class="post-author">
-        @{post.username} asked
-      </span>
+      <span class="post-author">@{post.username}</span>
       <span class="post-time">{formatTimeAgo(post.created_at)}</span>
-    </div>
-
-    <div class="post-actions-header">
-      {#if post.post_type !== 'text'}
-        <div class="engagement-stats">
-          <span class="stat">
-            📊 {post.response_count} responses
-          </span>
-          <span class="stat">
-            💬 {post.comment_count} comments
-          </span>
-          {#if currentUser}
-            <HeartButton
-              targetType="post"
-              targetId={post.id}
-              bind:heartCount
-              bind:userHearted
-            />
-          {:else}
-            <span class="stat">❤️ {heartCount}</span>
-          {/if}
-        </div>
-      {:else}
-        <div class="engagement-stats">
-          <span class="stat">
-            💬 {post.comment_count} comments
-          </span>
-          {#if currentUser}
-            <HeartButton
-              targetType="post"
-              targetId={post.id}
-              bind:heartCount
-              bind:userHearted
-            />
-          {:else}
-            <span class="stat">❤️ {heartCount}</span>
-          {/if}
-        </div>
-      {/if}
-
-      {#if currentUser && currentUser.id === post.user_id}
-        <a
-          href="/post/{post.id}/edit"
-          class="btn-edit-post"
-          title="Edit this post">
-          ✏️ Edit
-        </a>
-      {/if}
     </div>
   </div>
 
@@ -198,19 +145,93 @@ async function submitComment() {
     onEditResponse={editPollResponse}
   />
 
+  <!-- Post Footer with Actions -->
+  <div class="post-footer">
+    <div class="post-actions">
+      {#if post.post_type !== 'text'}
+        <span class="action-stat">
+          📊 {post.response_count} responses
+        </span>
+      {/if}
+
+      <button
+        onclick={toggleComments}
+        class="action-button comments-button"
+        title="Toggle comments">
+        💬 {post.comment_count} comment{post.comment_count !== 1 ? 's' : ''}
+        <span class="toggle-icon">{showComments ? '▼' : '▶'}</span>
+      </button>
+
+      {#if currentUser}
+        <HeartButton
+          targetType="post"
+          targetId={post.id}
+          bind:heartCount
+          bind:userHearted
+        />
+      {:else if heartCount > 0}
+        <span class="action-stat">❤️ {heartCount}</span>
+      {/if}
+    </div>
+
+    {#if currentUser && currentUser.id === post.user_id}
+      <a
+        href="/post/{post.id}/edit"
+        class="edit-button"
+        title="Edit this post">
+        <span class="edit-icon">✏️</span>
+        Edit
+      </a>
+    {/if}
+  </div>
+
   <!-- Comments Section -->
-  <CommentsSection
-    postId={post.id}
-    commentCount={post.comment_count}
-    bind:showComments
-    comments={postComments}
-    bind:newComment
-    isSubmitting={commentSubmitting}
-    onToggleComments={toggleComments}
-    onSubmitComment={submitComment}
-    {formatTimeAgo}
-    {currentUser}
-  />
+  {#if showComments}
+    <div class="comments-content">
+      {#if postComments && postComments.length > 0}
+        <div class="comments-list">
+          {#each postComments as comment (comment.id)}
+            <div class="comment">
+              <div class="comment-header">
+                <span class="comment-username">@{comment.username}</span>
+                <span class="comment-time">{formatTimeAgo(comment.created_at)}</span>
+              </div>
+              <div class="comment-content">{comment.content}</div>
+              <div class="comment-actions">
+                {#if currentUser}
+                  <HeartButton
+                    targetType="comment"
+                    targetId={comment.id}
+                    heartCount={comment.heartCount || 0}
+                    userHearted={comment.userHearted || false}
+                  />
+                {:else if comment.heartCount > 0}
+                  <span class="heart-count">❤️ {comment.heartCount}</span>
+                {/if}
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
+
+      <!-- New Comment Form -->
+      {#if currentUser}
+        <div class="comment-form">
+          <textarea
+            bind:value={newComment}
+            placeholder="Write a comment..."
+            rows="2"
+            disabled={commentSubmitting}></textarea>
+          <button
+            onclick={submitComment}
+            class="btn-primary btn-small"
+            disabled={!newComment?.trim() || commentSubmitting}>
+            {commentSubmitting ? 'Posting...' : 'Post Comment'}
+          </button>
+        </div>
+      {/if}
+    </div>
+  {/if}
 </article>
 
 <style>
@@ -228,34 +249,19 @@ async function submitComment() {
   }
 
   .post-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
     margin-bottom: 1rem;
-    flex-wrap: wrap;
-    gap: 1rem;
   }
 
   .post-meta {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .post-type {
-    background: var(--color-surface-alt);
-    color: var(--color-primary);
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 500;
+    gap: 0.75rem;
   }
 
   .post-author {
-    color: var(--color-text-secondary);
+    color: var(--color-primary);
     font-size: 0.9rem;
-    font-weight: 500;
+    font-weight: 600;
   }
 
   .post-time {
@@ -263,45 +269,79 @@ async function submitComment() {
     font-size: 0.8rem;
   }
 
-  .post-actions-header {
+  .post-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+    gap: 1rem;
+  }
+
+  .post-actions {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 1rem;
   }
 
-  .engagement-stats {
-    display: flex;
-    gap: 1rem;
-  }
-
-  .stat {
+  .action-stat {
     color: var(--color-text-secondary);
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     display: flex;
     align-items: center;
     gap: 0.25rem;
   }
 
-  .btn-edit-post {
-    background: var(--color-warning);
+  .action-button {
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+  }
+
+  .action-button:hover {
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+  }
+
+  .toggle-icon {
+    font-size: 0.7rem;
+    margin-left: 0.25rem;
+  }
+
+  .edit-button {
+    background: var(--color-primary);
     color: white;
     border: none;
-    border-radius: 6px;
-    padding: 0.25rem 0.75rem;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 500;
     transition: all 0.2s;
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.5rem;
+    text-decoration: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
-  .btn-edit-post:hover {
-    background: var(--color-warning);
-    filter: brightness(0.9);
+  .edit-button:hover {
+    background: var(--color-primary-dark);
     transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .edit-icon {
+    font-size: 0.9rem;
   }
 
   .post-title {
@@ -318,34 +358,143 @@ async function submitComment() {
     line-height: 1.6;
   }
 
+  /* Comments Styles */
+  .comments-content {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .comments-list {
+    margin-bottom: 1rem;
+  }
+
+  .comment {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .comment-username {
+    color: var(--color-primary);
+    font-weight: 500;
+    font-size: 0.9rem;
+  }
+
+  .comment-time {
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+  }
+
+  .comment-content {
+    color: var(--color-text);
+    line-height: 1.5;
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .comment-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .heart-count {
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .comment-form {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 1rem;
+  }
+
+  .comment-form textarea {
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    resize: vertical;
+    min-height: 60px;
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .comment-form textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  .btn-primary {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+  }
+
+  .btn-primary:disabled {
+    background: var(--color-text-muted);
+    cursor: not-allowed;
+  }
+
+  .btn-small {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+
   @media (max-width: 768px) {
     .post-card {
       padding: 1rem;
     }
 
-    .post-header {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
     .post-meta {
-      justify-content: center;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
     }
 
-    .post-actions-header {
+    .post-footer {
       flex-direction: column;
       align-items: stretch;
-      gap: 0.5rem;
+      gap: 0.75rem;
     }
 
-    .engagement-stats {
+    .post-actions {
       justify-content: center;
+      flex-wrap: wrap;
     }
 
-    .btn-edit-post {
+    .edit-button {
       align-self: center;
-      font-size: 0.75rem;
-      padding: 0.2rem 0.6rem;
+      font-size: 0.8rem;
+      padding: 0.4rem 0.8rem;
+    }
+
+    .comment-form {
+      padding: 0.75rem;
     }
   }
 </style>
