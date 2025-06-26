@@ -232,11 +232,9 @@ export function getPostsForFeed(_userId?: number) {
     .prepare(`
       SELECT
         p.*,
-        u.username,
         (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
         (SELECT COUNT(*) FROM poll_responses pr WHERE pr.post_id = p.id) as response_count
       FROM posts p
-      JOIN users u ON p.user_id = u.id
       ORDER BY p.sort_order ASC, p.created_at ASC
     `)
     .all()
@@ -254,11 +252,9 @@ export function getPostsForFeedWithDetails(userId?: number) {
     .prepare(`
       SELECT
         p.*,
-        u.username,
         (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
         (SELECT COUNT(*) FROM poll_responses pr WHERE pr.post_id = p.id) as response_count
       FROM posts p
-      JOIN users u ON p.user_id = u.id
       ORDER BY p.sort_order ASC, p.created_at ASC
     `)
     .all()
@@ -451,11 +447,8 @@ export function getPostById(id: number) {
 
   const post = db
     .prepare(`
-      SELECT
-        p.*,
-        u.username
+      SELECT p.*
       FROM posts p
-      JOIN users u ON p.user_id = u.id
       WHERE p.id = ?
     `)
     .get(id)
@@ -565,11 +558,8 @@ export function getCommentsForPost(postId: number) {
 
   const comments = db
     .prepare(`
-      SELECT
-        c.*,
-        u.username
+      SELECT c.*
       FROM comments c
-      JOIN users u ON c.user_id = u.id
       WHERE c.post_id = ?
       ORDER BY c.created_at ASC
     `)

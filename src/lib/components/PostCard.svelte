@@ -243,7 +243,6 @@ async function deleteComment(commentId: number) {
 <article class="post-card">
   <div class="post-header">
     <div class="post-meta">
-      <span class="post-author">@{post.username}</span>
       <span class="post-time">{formatTimeAgo(post.created_at)}</span>
     </div>
   </div>
@@ -323,7 +322,6 @@ async function deleteComment(commentId: number) {
           {#each postComments as comment (comment.id)}
             <div class="comment">
               <div class="comment-header">
-                <span class="comment-username">@{comment.username}</span>
                 <span class="comment-time">{formatTimeAgo(comment.created_at)}</span>
               </div>
 

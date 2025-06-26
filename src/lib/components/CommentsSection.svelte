@@ -52,9 +52,6 @@ function submitComment() {
           {#each comments as comment (comment.id)}
             <div class="comment">
               <div class="comment-header">
-                <div class="comment-author">
-                  <span class="comment-username">@{comment.username}</span>
-                </div>
                 <span class="comment-time">{formatTimeAgo(comment.created_at)}</span>
               </div>
               <div class="comment-content">{comment.content}</div>

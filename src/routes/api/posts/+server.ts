@@ -67,7 +67,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       success: true,
       post: {
         ...post,
-        username: user.username,
         poll_config: pollConfig,
       },
     })
