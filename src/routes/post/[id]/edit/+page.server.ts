@@ -1,8 +1,12 @@
-import { getPostById } from '$lib/platform-database'
-import { error } from '@sveltejs/kit'
-import type { PageServerLoad } from './$types'
+import { getPostById, updatePost } from '$lib/platform-database'
+import { pollConfigSchema } from '$lib/schemas'
+import { json } from '$lib/zod-helpers'
+import { error, fail, redirect } from '@sveltejs/kit'
+import { z } from 'zod/v4'
+import { zfd } from 'zod-form-data'
+import type { Actions, PageServerLoad } from './$types'
 
-export const load: PageServerLoad = async ({ params, request }) => {
+export const load: PageServerLoad = async ({ params }) => {
   const postId = Number.parseInt(params.id)
   if (Number.isNaN(postId)) {
     throw error(400, 'Invalid post ID')
@@ -25,8 +29,59 @@ export const load: PageServerLoad = async ({ params, request }) => {
       post_type: post.post_type,
       poll_config: post.poll_config,
       user_id: post.user_id,
-      username: post.username,
       created_at: post.created_at,
     },
   }
+}
+
+const updatePostSchema = zfd.formData({
+  title: zfd.text(z.string().trim().min(1, 'Title is required')),
+  content: zfd.text(z.string().trim().optional()),
+  postType: zfd.text(
+    z.enum(['text', 'radio', 'scale'], { message: 'Invalid post type' }),
+  ),
+  pollConfig: zfd.text(json(pollConfigSchema).optional()),
+})
+
+export const actions: Actions = {
+  updatePost: async ({ params, request, locals }) => {
+    const postId = Number.parseInt(params.id)
+    if (Number.isNaN(postId)) {
+      return fail(400, { error: 'Invalid post ID' })
+    }
+
+    // Check authentication
+    if (!locals.user) {
+      return fail(401, { error: 'Authentication required' })
+    }
+
+    const formData = await request.formData()
+    const { title, content, postType, pollConfig } =
+      updatePostSchema.parse(formData)
+
+    // Validate content requirement for text posts
+    if (postType === 'text' && (!content || content.length === 0)) {
+      return fail(400, { error: 'Content is required for text posts' })
+    }
+
+    // Validate poll configuration for poll posts
+    if (postType !== 'text' && !pollConfig) {
+      return fail(400, { error: 'Poll configuration is required for polls' })
+    }
+
+    // Update the post
+    updatePost(
+      postId,
+      locals.user.id,
+      title,
+      content || null,
+      postType,
+      pollConfig,
+    )
+
+    console.log('Post updated by', locals.user.username, 'for post', postId)
+
+    // Redirect to feed after successful update
+    redirect(303, '/feed')
+  },
 }

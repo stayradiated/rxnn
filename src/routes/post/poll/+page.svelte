@@ -1,6 +1,8 @@
 <script lang="ts">
+import { enhance } from '$app/forms'
 import { goto } from '$app/navigation'
-import { onMount } from 'svelte'
+import type { SubmitFunction } from '@sveltejs/kit'
+import type { ActionData } from './$types'
 
 type PollType = 'radio' | 'scale'
 
@@ -9,6 +11,19 @@ let content = $state('')
 let pollType: PollType = $state('radio')
 let isLoading = $state(false)
 let error = $state('')
+
+interface Props {
+  form?: ActionData
+}
+
+let { form }: Props = $props()
+
+$effect(() => {
+  if (form?.error) {
+    error = form.error
+    isLoading = false
+  }
+})
 
 let radioOptions: string[] = $state([''])
 let scaleMin = $state(1)
@@ -28,67 +43,58 @@ function updateOption(index: number, value: string) {
   radioOptions[index] = value
 }
 
-const submitPost = async (event: SubmitEvent) => {
-  event.preventDefault()
-
+function validateAndSubmit() {
   if (!title.trim()) {
     error = 'Title is required'
-    return
+    return false
+  }
+
+  if (pollType === 'radio') {
+    const validOptions = radioOptions.filter((opt) => opt.trim())
+    if (validOptions.length < 2) {
+      error = 'Multiple choice polls need at least 2 options'
+      return false
+    }
   }
 
   isLoading = true
   error = ''
+  return true
+}
 
-  try {
-    let pollConfig = null
-
-    if (pollType === 'radio') {
-      const validOptions = radioOptions.filter((opt) => opt.trim())
-      if (validOptions.length < 2) {
-        error = 'Multiple choice polls need at least 2 options'
-        isLoading = false
-        return
-      }
-      pollConfig = {
-        type: 'radio',
-        options: validOptions.map((opt, i) => ({
-          id: `opt${i}`,
-          label: opt.trim(),
-        })),
-      }
-    } else if (pollType === 'scale') {
-      pollConfig = {
-        type: 'scale',
-        min: scaleMin,
-        max: scaleMax,
-        minLabel: scaleMinLabel.trim(),
-        maxLabel: scaleMaxLabel.trim(),
-      }
-    }
-
-    const response = await fetch('/api/posts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title: title.trim(),
-        content: content.trim() || null,
-        postType: pollType,
-        pollConfig,
-      }),
+// Get the poll configuration as JSON
+const pollConfigJson = $derived.by(() => {
+  if (pollType === 'radio') {
+    const validOptions = radioOptions.filter((opt) => opt.trim())
+    return JSON.stringify({
+      type: 'radio',
+      options: validOptions.map((opt, i) => ({
+        id: `opt${i}`,
+        label: opt.trim(),
+      })),
     })
+  }
+  if (pollType === 'scale') {
+    return JSON.stringify({
+      type: 'scale',
+      min: scaleMin,
+      max: scaleMax,
+      minLabel: scaleMinLabel.trim(),
+      maxLabel: scaleMaxLabel.trim(),
+    })
+  }
+  return ''
+})
 
-    if (response.ok) {
-      await response.json()
-      goto('/feed')
-    } else {
-      error = 'Failed to create poll'
-    }
-  } catch (err) {
-    error = 'Network error. Please try again.'
-  } finally {
+const handleSubmit: SubmitFunction = async () => {
+  if (!validateAndSubmit()) {
     isLoading = false
+    return
+  }
+
+  return async ({ update }) => {
+    isLoading = false
+    update()
   }
 }
 </script>
@@ -101,8 +107,12 @@ const submitPost = async (event: SubmitEvent) => {
   <div class="composer-card">
     <h1>📊 Create Poll</h1>
 
-    <form onsubmit={submitPost}>
+    <form
+      method="POST"
+      action="?/createPoll"
+      use:enhance={handleSubmit}>
       <div class="form-group">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label>Poll Type:</label>
         <div class="poll-type-grid">
           <label class="poll-type-option" class:selected={pollType === 'radio'}>
@@ -147,8 +157,9 @@ const submitPost = async (event: SubmitEvent) => {
 
       {#if pollType === 'radio'}
         <div class="form-group">
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label>Options:</label>
-          {#each radioOptions as option, index (index)}
+          {#each radioOptions as _option, index (index)}
             <div class="option-input">
               <input
                 type="text"
@@ -167,9 +178,11 @@ const submitPost = async (event: SubmitEvent) => {
 
       {:else if pollType === 'scale'}
         <div class="form-group">
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label>Scale Configuration:</label>
           <div class="scale-config">
             <div class="config-row">
+              <!-- svelte-ignore a11y_label_has_associated_control -->
               <label>Range:</label>
               <input
                 type="number"
@@ -188,10 +201,12 @@ const submitPost = async (event: SubmitEvent) => {
               />
             </div>
             <div class="config-row">
+              <!-- svelte-ignore a11y_label_has_associated_control -->
               <label>Min Label:</label>
               <input type="text" bind:value={scaleMinLabel} placeholder="e.g., Strongly Disagree" disabled={isLoading} />
             </div>
             <div class="config-row">
+              <!-- svelte-ignore a11y_label_has_associated_control -->
               <label>Max Label:</label>
               <input type="text" bind:value={scaleMaxLabel} placeholder="e.g., Strongly Agree" disabled={isLoading} />
             </div>
@@ -204,6 +219,12 @@ const submitPost = async (event: SubmitEvent) => {
           {error}
         </div>
       {/if}
+
+      <!-- Hidden fields for form submission -->
+      <input type="hidden" name="title" value={title} />
+      <input type="hidden" name="content" value={content} />
+      <input type="hidden" name="postType" value={pollType} />
+      <input type="hidden" name="pollConfig" value={pollConfigJson} />
 
       <div class="form-actions">
         <button type="button" onclick={() => goto('/feed')} class="btn-secondary" disabled={isLoading}>

@@ -2,17 +2,20 @@ import { existsSync, mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import Database from 'better-sqlite3'
 
+import type {
+  Comment,
+  PollAggregates,
+  PollResponse,
+  Post,
+  PostType,
+  PostWithDetails,
+  ResponseData,
+  TargetType,
+  User,
+} from './types'
+
 // Database setup and schema
 let db: Database.Database
-
-type User = {
-  id: number
-  token: string
-  username: string
-  created_at: Date
-  updated_at: Date
-  last_seen: Date
-}
 
 export function initDatabase() {
   // Use data directory for production, local file for development
@@ -160,10 +163,12 @@ export function createUser(token: string, username: string): User {
   return result as User
 }
 
-export function findUserByToken(token: string) {
+export function findUserByToken(token: string): User | undefined {
   const db = getDatabase()
 
-  return db.prepare('SELECT * FROM users WHERE token = ?').get(token)
+  return db
+    .prepare<[string], User>('SELECT * FROM users WHERE token = ?')
+    .get(token)
 }
 
 export function updateLastSeen(userId: number) {
@@ -192,23 +197,54 @@ export function isUsernameAvailable(username: string, excludeUserId?: number) {
 
 // Post operations
 export function createPost(
-  userId: number,
-  title: string,
-  content: string | null,
-  postType: string,
-  pollConfig?: object,
-) {
+  options: Pick<
+    Post,
+    'user_id' | 'title' | 'content' | 'post_type' | 'poll_config'
+  >,
+): Post {
+  const {
+    user_id: userId,
+    title,
+    content,
+    post_type: postType,
+    poll_config: pollConfig,
+  } = options
+
   const db = getDatabase()
 
   const configJson = pollConfig ? JSON.stringify(pollConfig) : null
 
   // Get current max sort_order and increment by 1 for new posts
   const maxSortOrder = db
-    .prepare('SELECT COALESCE(MAX(sort_order), 0) as max_order FROM posts')
+    .prepare<
+      [],
+      {
+        max_order: number
+      }
+    >('SELECT COALESCE(MAX(sort_order), 0) as max_order FROM posts')
     .get() as { max_order: number }
 
   const result = db
-    .prepare(`
+    .prepare<
+      [
+        number, // userId
+        string, // title
+        string | null, // content
+        string, // postType
+        string | null, // pollConfig (JSON string or null)
+        number, // sortOrder
+      ],
+      {
+        id: number
+        user_id: number
+        title: string
+        content: string | null
+        post_type: string
+        poll_config: string | null
+        created_at: string
+        sort_order: number
+      }
+    >(`
       INSERT INTO posts (user_id, title, content, post_type, poll_config, sort_order)
       VALUES (?, ?, ?, ?, ?, ?)
       RETURNING *
@@ -222,7 +258,15 @@ export function createPost(
       maxSortOrder.max_order + 1,
     )
 
-  return result
+  if (!result) {
+    throw new Error('Failed to create post')
+  }
+
+  return {
+    ...result,
+    post_type: result.post_type as PostType,
+    poll_config: result.poll_config ? JSON.parse(result.poll_config) : null,
+  }
 }
 
 export function getPostsForFeed(_userId?: number) {
@@ -245,11 +289,25 @@ export function getPostsForFeed(_userId?: number) {
   }))
 }
 
-export function getPostsForFeedWithDetails(userId?: number) {
+export function getPostsForFeedWithDetails(userId: number): PostWithDetails[] {
   const db = getDatabase()
 
   const posts = db
-    .prepare(`
+    .prepare<
+      [],
+      {
+        id: number
+        user_id: number
+        title: string
+        content: string
+        post_type: string
+        poll_config: string | null
+        created_at: string
+        sort_order: number
+        comment_count: number
+        response_count: number
+      }
+    >(`
       SELECT
         p.*,
         (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
@@ -262,49 +320,52 @@ export function getPostsForFeedWithDetails(userId?: number) {
   const postIds = posts.map((post: any) => post.id)
   const postHearts = getHeartsForPosts(postIds, userId)
 
-  return posts.map((post: any) => {
-    const postData = {
-      ...post,
-      poll_config: post.poll_config ? JSON.parse(post.poll_config) : null,
-    }
-
+  return posts.map((post) => {
     // Get comments for this post
     const comments = getCommentsForPost(post.id)
     const commentIds = comments.map((comment: any) => comment.id)
     const commentHearts = getHeartsForComments(commentIds, userId)
 
     // Add heart data to comments
-    postData.comments = comments.map((comment: any) => ({
+    const commentsWithDetails = comments.map((comment: any) => ({
       ...comment,
       heartCount: commentHearts[comment.id]?.count || 0,
       userHearted: commentHearts[comment.id]?.userHearted || false,
     }))
 
     // Add heart data to post
-    postData.heartCount = postHearts[post.id]?.count || 0
-    postData.userHearted = postHearts[post.id]?.userHearted || false
+    const heartCount = postHearts[post.id]?.count || 0
+    const userHearted = postHearts[post.id]?.userHearted || false
 
-    // Get poll results if it's a poll
-    if (post.post_type !== 'text') {
-      // Get user's response if authenticated
-      if (userId) {
-        postData.userResponse = getUserPollResponse(userId, post.id)
+    const userResponse = getUserPollResponse(userId, post.id)
 
-        // Only show poll results if user has already submitted a response AND there are at least 5 total responses
-        if (postData.userResponse) {
-          const pollResults = getPollAggregates(post.id)
-          if (pollResults && pollResults.totalResponses >= 5) {
-            postData.pollResults = pollResults
-          }
-        }
+    // Only show poll results if user has already submitted a response AND there are at least 5 total responses
+    let pollResults: PollAggregates | null = null
+    if (userResponse) {
+      const rawPollResults = getPollAggregates(post.id)
+      if (rawPollResults && rawPollResults.totalResponses >= 5) {
+        pollResults = rawPollResults
       }
     }
+
+    const postData = {
+      ...post,
+      post_type: post.post_type as PostType,
+      content: post.content || '',
+      poll_config: post.poll_config ? JSON.parse(post.poll_config) : null,
+
+      comments: commentsWithDetails,
+      heartCount,
+      userHearted,
+      pollResults: pollResults,
+      userResponse,
+    } as PostWithDetails
 
     return postData
   })
 }
 
-export function getPollAggregates(postId: number) {
+export function getPollAggregates(postId: number): PollAggregates | null {
   const db = getDatabase()
 
   // Get the post to understand the poll structure
@@ -314,10 +375,18 @@ export function getPollAggregates(postId: number) {
   }
 
   const pollConfig = post.poll_config
+  if (!pollConfig) {
+    return null
+  }
 
   // Get all responses for aggregation
   const responses = db
-    .prepare(`
+    .prepare<
+      [number],
+      {
+        response_data: ResponseData
+      }
+    >(`
       SELECT response_data
       FROM poll_responses
       WHERE post_id = ?
@@ -327,7 +396,7 @@ export function getPollAggregates(postId: number) {
   const totalResponses = responses.length
   const responseData = responses.map((r: any) => JSON.parse(r.response_data))
 
-  if (post.post_type === 'radio') {
+  if (post.post_type === 'radio' && pollConfig.type === 'radio') {
     // For radio polls, count votes for each option
     const optionCounts: { [key: string]: number } = {}
     const specialCounts = { prefer_not_to_say: 0, not_applicable: 0 }
@@ -367,7 +436,7 @@ export function getPollAggregates(postId: number) {
       ],
     }
   }
-  if (post.post_type === 'scale') {
+  if (post.post_type === 'scale' && pollConfig.type === 'scale') {
     // For scale polls, calculate statistics
     const values = responseData
       .map((data: any) => data.scaleValue)
@@ -391,6 +460,8 @@ export function getPollAggregates(postId: number) {
         average: 0,
         min: pollConfig.min,
         max: pollConfig.max,
+        configMin: 0,
+        configMax: 0,
         distribution: [],
         specialOptions: [
           { type: 'prefer_not_to_say', count: specialCounts.prefer_not_to_say },
@@ -435,28 +506,41 @@ export function getPollAggregates(postId: number) {
     }
   }
 
-  return {
-    totalResponses,
-    type: post.post_type,
-    responses: responseData,
-  }
+  throw new Error(
+    `Unsupported post type for poll aggregation: ${post.post_type}`,
+  )
 }
 
-export function getPostById(id: number) {
+export function getPostById(id: number): Post | null {
   const db = getDatabase()
 
   const post = db
-    .prepare(`
+    .prepare<
+      [number],
+      {
+        id: number
+        user_id: number
+        title: string
+        content: string | null
+        post_type: string
+        poll_config: string | null
+        created_at: string
+        sort_order: number
+      }
+    >(`
       SELECT p.*
       FROM posts p
       WHERE p.id = ?
     `)
     .get(id)
 
-  if (!post) return null
+  if (!post) {
+    return null
+  }
 
   return {
     ...post,
+    post_type: post.post_type as PostType,
     poll_config: post.poll_config ? JSON.parse(post.poll_config) : null,
   }
 }
@@ -468,12 +552,17 @@ export function updatePost(
   content: string | null,
   postType: string,
   pollConfig?: object,
-) {
+): Post {
   const db = getDatabase()
 
   // First check if the post exists and belongs to the user
   const existingPost = db
-    .prepare('SELECT user_id FROM posts WHERE id = ?')
+    .prepare<
+      [number],
+      {
+        user_id: number
+      }
+    >('SELECT user_id FROM posts WHERE id = ?')
     .get(id)
 
   if (!existingPost) {
@@ -485,7 +574,26 @@ export function updatePost(
   }
 
   const result = db
-    .prepare(`
+    .prepare<
+      [
+        string, // title
+        string | null, // content
+        string, // post_type
+        string | null, // poll_config (JSON string or null)
+        number, // id
+        number, // userId
+      ],
+      {
+        id: number
+        user_id: number
+        title: string
+        content: string | null
+        post_type: string
+        poll_config: string | null
+        created_at: string
+        sort_order: number
+      }
+    >(`
       UPDATE posts
       SET title = ?, content = ?, post_type = ?, poll_config = ?
       WHERE id = ? AND user_id = ?
@@ -506,16 +614,22 @@ export function updatePost(
 
   return {
     ...result,
+    post_type: result.post_type as PostType,
     poll_config: result.poll_config ? JSON.parse(result.poll_config) : null,
   }
 }
 
-export function deletePost(id: number, userId: number) {
+export function deletePost(id: number, userId: number): { success: boolean } {
   const db = getDatabase()
 
   // First check if the post exists and belongs to the user
   const existingPost = db
-    .prepare('SELECT user_id FROM posts WHERE id = ?')
+    .prepare<
+      [number],
+      {
+        user_id: number
+      }
+    >('SELECT user_id FROM posts WHERE id = ?')
     .get(id)
 
   if (!existingPost) {
@@ -539,25 +653,33 @@ export function deletePost(id: number, userId: number) {
 }
 
 // Comment operations
-export function createComment(userId: number, postId: number, content: string) {
+export function createComment(
+  userId: number,
+  postId: number,
+  content: string,
+): Comment {
   const db = getDatabase()
 
   const result = db
-    .prepare(`
+    .prepare<[number, number, string], Comment>(`
       INSERT INTO comments (user_id, post_id, content)
       VALUES (?, ?, ?)
       RETURNING *
     `)
     .get(userId, postId, content)
 
+  if (!result) {
+    throw new Error('Failed to create comment')
+  }
+
   return result
 }
 
-export function getCommentsForPost(postId: number) {
+export function getCommentsForPost(postId: number): Comment[] {
   const db = getDatabase()
 
   const comments = db
-    .prepare(`
+    .prepare<[number], Comment>(`
       SELECT c.*
       FROM comments c
       WHERE c.post_id = ?
@@ -568,12 +690,21 @@ export function getCommentsForPost(postId: number) {
   return comments
 }
 
-export function updateComment(id: number, userId: number, content: string) {
+export function updateComment(
+  id: number,
+  userId: number,
+  content: string,
+): Comment {
   const db = getDatabase()
 
   // First check if the comment exists and belongs to the user
   const existingComment = db
-    .prepare('SELECT user_id FROM comments WHERE id = ?')
+    .prepare<
+      [number],
+      {
+        user_id: number
+      }
+    >('SELECT user_id FROM comments WHERE id = ?')
     .get(id)
 
   if (!existingComment) {
@@ -585,7 +716,7 @@ export function updateComment(id: number, userId: number, content: string) {
   }
 
   const result = db
-    .prepare(`
+    .prepare<[string, number, number], Comment>(`
       UPDATE comments
       SET content = ?
       WHERE id = ? AND user_id = ?
@@ -600,12 +731,20 @@ export function updateComment(id: number, userId: number, content: string) {
   return result
 }
 
-export function deleteComment(id: number, userId: number) {
+export function deleteComment(
+  id: number,
+  userId: number,
+): { success: boolean } {
   const db = getDatabase()
 
   // First check if the comment exists and belongs to the user
   const existingComment = db
-    .prepare('SELECT user_id FROM comments WHERE id = ?')
+    .prepare<
+      [number],
+      {
+        user_id: number
+      }
+    >('SELECT user_id FROM comments WHERE id = ?')
     .get(id)
 
   if (!existingComment) {
@@ -618,7 +757,9 @@ export function deleteComment(id: number, userId: number) {
 
   // Delete the comment (cascading will handle hearts)
   const result = db
-    .prepare('DELETE FROM comments WHERE id = ? AND user_id = ?')
+    .prepare<[number, number]>(
+      'DELETE FROM comments WHERE id = ? AND user_id = ?',
+    )
     .run(id, userId)
 
   if (result.changes === 0) {
@@ -660,18 +801,23 @@ export function submitPollResponse(
   }
 }
 
-export function getUserPollResponse(userId: number, postId: number) {
+export function getUserPollResponse(
+  userId: number,
+  postId: number,
+): ResponseData | null {
   const db = getDatabase()
 
   const response = db
-    .prepare(`
+    .prepare<[number, number], PollResponse>(`
       SELECT response_data
       FROM poll_responses
       WHERE user_id = ? AND post_id = ?
     `)
     .get(userId, postId)
 
-  if (!response) return null
+  if (!response) {
+    return null
+  }
 
   return JSON.parse(response.response_data)
 }
@@ -679,14 +825,19 @@ export function getUserPollResponse(userId: number, postId: number) {
 // Heart operations
 export function toggleHeart(
   userId: number,
-  targetType: 'post' | 'comment',
+  targetType: TargetType,
   targetId: number,
-) {
+): { hearted: boolean } {
   const db = getDatabase()
 
   // Check if heart already exists
   const existingHeart = db
-    .prepare(`
+    .prepare<
+      [number, TargetType, number],
+      {
+        id: number
+      }
+    >(`
       SELECT id FROM hearts
       WHERE user_id = ? AND target_type = ? AND target_id = ?
     `)
@@ -694,17 +845,18 @@ export function toggleHeart(
 
   if (existingHeart) {
     // Remove heart
-    db.prepare(`
+    db.prepare<[number, TargetType, number]>(`
       DELETE FROM hearts
       WHERE user_id = ? AND target_type = ? AND target_id = ?
     `).run(userId, targetType, targetId)
     return { hearted: false }
   }
   // Add heart
-  db.prepare(`
+  db.prepare<[number, TargetType, number]>(`
       INSERT INTO hearts (user_id, target_type, target_id)
       VALUES (?, ?, ?)
     `).run(userId, targetType, targetId)
+
   return { hearted: true }
 }
 

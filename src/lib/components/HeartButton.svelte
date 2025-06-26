@@ -1,4 +1,7 @@
 <script lang="ts">
+import { enhance } from '$app/forms'
+import type { SubmitFunction } from '@sveltejs/kit'
+
 interface Props {
   targetType: 'post' | 'comment'
   targetId: number
@@ -17,56 +20,75 @@ let {
 
 let isSubmitting = $state(false)
 
-async function toggleHeart() {
+// Form data for heart toggle
+let heartData = $state({
+  targetType: '',
+  targetId: 0,
+})
+
+function toggleHeart() {
   if (disabled || isSubmitting) return
 
+  // Set up form data for submission
+  heartData = {
+    targetType: targetType,
+    targetId: targetId,
+  }
+
+  // Trigger form submission
+  const form = document.getElementById(
+    `heart-form-${targetType}-${targetId}`,
+  ) as HTMLFormElement
+  if (form) {
+    isSubmitting = true
+    form.requestSubmit()
+  }
+}
+
+const handleSubmit: SubmitFunction = () => {
   isSubmitting = true
-
-  try {
-    const response = await fetch('/api/hearts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ targetType, targetId }),
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-
+  return async ({ result }) => {
+    isSubmitting = false
+    if (result.type === 'success') {
       // Update the local state
-      if (data.hearted && !userHearted) {
+      if (result.data?.hearted && !userHearted) {
         heartCount += 1
         userHearted = true
-      } else if (!data.hearted && userHearted) {
+      } else if (!result.data?.hearted && userHearted) {
         heartCount -= 1
         userHearted = false
       }
-    } else {
-      console.error('Failed to toggle heart')
     }
-  } catch (error) {
-    console.error('Error toggling heart:', error)
-  } finally {
-    isSubmitting = false
   }
 }
 </script>
 
-<button
-  class="heart-button"
-  class:hearted={userHearted}
-  class:disabled={disabled || isSubmitting}
-  onclick={toggleHeart}
-  disabled={disabled || isSubmitting}
-  title={userHearted ? 'Remove heart' : 'Add heart'}>
-  <span class="heart-icon">
-    {userHearted ? '❤️' : '🤍'}
-  </span>
-  {#if heartCount > 0}
-    <span class="heart-count">{heartCount}</span>
-  {/if}
-</button>
+<form
+  method="POST"
+  action="?/toggleHeart"
+  use:enhance={handleSubmit}>
+
+  <input type="hidden" name="targetType" value={heartData.targetType} />
+
+  <input type="hidden" name="targetId" value={heartData.targetId} />
+
+  <button
+    class="heart-button"
+    class:hearted={userHearted}
+    class:disabled={disabled || isSubmitting}
+    onclick={toggleHeart}
+    disabled={disabled || isSubmitting}
+    title={userHearted ? 'Remove heart' : 'Add heart'}>
+
+    <span class="heart-icon">
+      {userHearted ? '❤️' : '🤍'}
+    </span>
+
+    {#if heartCount > 0}
+      <span class="heart-count">{heartCount}</span>
+    {/if}
+  </button>
+</form>
 
 <style>
   .heart-button {

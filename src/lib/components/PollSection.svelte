@@ -1,42 +1,44 @@
 <script lang="ts">
+import { enhance } from '$app/forms'
+import type { PostWithDetails, ResponseData } from '$lib/types'
+import type { SubmitFunction } from '@sveltejs/kit'
+
 interface Props {
-  post: any
-  pollResponses?: any
-  pollResults?: any
-  userResponse?: any
-  showResults?: boolean
-  editing?: boolean
-  onSubmitResponse: (responseData: any) => void
-  onEditResponse: () => void
+  post: PostWithDetails
 }
 
-let {
-  post,
-  pollResponses = $bindable({}),
-  pollResults = null,
-  userResponse = null,
-  showResults = false,
-  editing = false,
-  onSubmitResponse,
-  onEditResponse,
-}: Props = $props()
+const { post }: Props = $props()
 
-function submitResponse() {
-  const response = pollResponses
-  if (post.post_type === 'radio' && response?.selectedOption) {
-    onSubmitResponse({ selectedOption: response.selectedOption })
-  } else if (post.post_type === 'scale') {
-    if (response?.specialOption) {
-      onSubmitResponse({ specialOption: response.specialOption })
-    } else if (response?.scaleValue) {
-      onSubmitResponse({ scaleValue: response.scaleValue })
-    }
+const pollResults = $derived(post.pollResults)
+const userResponse = $derived(post.userResponse)
+const showResults = $derived(!!post.pollResults)
+
+let pollResponses = $state<ResponseData>({})
+let editing = $state(false)
+
+function editResponse() {
+  editing = true
+
+  // Populate form with current response
+  if (userResponse) {
+    pollResponses = { ...userResponse }
   }
 }
 
-function editResponse() {
-  onEditResponse()
-}
+const pollResponseData = $derived.by(() => {
+  const response = pollResponses
+  if (post.post_type === 'radio' && response?.selectedOption) {
+    return { selectedOption: response.selectedOption }
+  }
+  if (post.post_type === 'scale') {
+    if (response?.specialOption) {
+      return { specialOption: response.specialOption }
+    }
+    if (response?.scaleValue) {
+      return { scaleValue: response.scaleValue }
+    }
+  }
+})
 
 function isSubmitDisabled() {
   if (post.post_type === 'radio') {
@@ -48,22 +50,22 @@ function isSubmitDisabled() {
   return true
 }
 
-// Initialize pollResponses if not already done
-if (!pollResponses) {
-  pollResponses = {}
-}
-
-// Initialize scaleValue to the minimum value if not set
-if (
-  post.post_type === 'scale' &&
-  !pollResponses.scaleValue &&
-  !pollResponses.specialOption
-) {
-  pollResponses.scaleValue = post.poll_config?.min || 1
+const handleSubmit: SubmitFunction = () => {
+  editing = false
 }
 
 // Clear conflicting selections for scale polls
 $effect(() => {
+  // Initialize scaleValue to the minimum value if not set
+  if (
+    post.post_type === 'scale' &&
+    post.poll_config?.type === 'scale' &&
+    !pollResponses.scaleValue &&
+    !pollResponses.specialOption
+  ) {
+    pollResponses.scaleValue = post.poll_config.min || 1
+  }
+
   if (post.post_type === 'scale' && pollResponses) {
     // If user selects a special option, clear scale value
     if (pollResponses.specialOption) {
@@ -79,13 +81,13 @@ $effect(() => {
 
 {#if post.post_type !== 'text'}
   <div class="poll-section">
-    {#if showResults && pollResults}
+    {#if showResults && pollResults && !editing}
       <!-- Show Poll Results -->
       <div class="poll-results">
         <h4>Poll Results</h4>
-        {#if post.post_type === 'radio'}
+        {#if post.post_type === 'radio' && post.poll_config?.type === 'radio'}
           {#each post.poll_config.options as option (option.id)}
-            {@const result = pollResults.options?.find(r => r.option_id === option.id)}
+            {@const result = pollResults.options.find(r => r.option_id === option.id)}
             {@const percentage = result ? Math.round((result.count / pollResults.totalResponses) * 100) : 0}
             {@const isUserChoice = userResponse?.selectedOption === option.id}
             <div class="poll-result-item" class:user-selected={isUserChoice}>
@@ -105,7 +107,7 @@ $effect(() => {
               </div>
             </div>
           {/each}
-        {:else if post.post_type === 'scale'}
+        {:else if post.post_type === 'scale' && post.poll_config?.type === 'scale'}
           <div class="scale-results">
             <div class="scale-stats">
               <span>Average: {pollResults.average?.toFixed(1) || 'N/A'}</span>
@@ -125,7 +127,7 @@ $effect(() => {
 
             <div class="scale-chart">
               {#each Array.from({length: post.poll_config.max - post.poll_config.min + 1}, (_, i) => post.poll_config.min + i) as value, index (index)}
-                {@const result = pollResults.distribution?.find(r => r.value === value)}
+                {@const result = pollResults.distribution.find(r => r.value === value)}
                 {@const count = result?.count || 0}
                 {@const percentage = result ? Math.round((result.count / pollResults.totalResponses) * 100) : 0}
                 {@const isUserChoice = userResponse?.scaleValue === value}
@@ -193,112 +195,120 @@ $effect(() => {
     {:else}
       <!-- Show Poll Form -->
       <div class="poll-form">
-        {#if post.post_type === 'radio' && post.poll_config}
-          <div class="radio-poll">
-            {#each post.poll_config.options as option (option.id)}
-              <label class="poll-option">
-                <input
-                  type="radio"
-                  bind:group={pollResponses.selectedOption}
-                  value={option.id}
-                  name="poll-{post.id}"
-                />
-                <span class="option-text">{option.label}</span>
-              </label>
-            {/each}
+        <form
+          method="POST"
+          action="?/submitPollResponse"
+          use:enhance={handleSubmit}>
 
-            <!-- Special options -->
-            <div class="special-options">
-              <label class="poll-option special-option">
-                <input
-                  type="radio"
-                  bind:group={pollResponses.selectedOption}
-                  value="prefer_not_to_say"
-                  name="poll-{post.id}"
-                />
-                <span class="option-text">Prefer Not To Say</span>
-              </label>
-              <label class="poll-option special-option">
-                <input
-                  type="radio"
-                  bind:group={pollResponses.selectedOption}
-                  value="not_applicable"
-                  name="poll-{post.id}"
-                />
-                <span class="option-text">Not Applicable</span>
-              </label>
+          <input type="hidden" name="postId" value={post.id} />
+          <input type="hidden" name="responseData" value={JSON.stringify(pollResponseData)} />
+
+          {#if post.post_type === 'radio' && post.poll_config?.type === 'radio'}
+            <div class="radio-poll">
+              {#each post.poll_config.options as option (option.id)}
+                <label class="poll-option">
+                  <input
+                    type="radio"
+                    bind:group={pollResponses.selectedOption}
+                    value={option.id}
+                    name="poll-{post.id}"
+                  />
+                  <span class="option-text">{option.label}</span>
+                </label>
+              {/each}
+
+              <!-- Special options -->
+              <div class="special-options">
+                <label class="poll-option special-option">
+                  <input
+                    type="radio"
+                    bind:group={pollResponses.selectedOption}
+                    value="prefer_not_to_say"
+                    name="poll-{post.id}"
+                  />
+                  <span class="option-text">Prefer Not To Say</span>
+                </label>
+                <label class="poll-option special-option">
+                  <input
+                    type="radio"
+                    bind:group={pollResponses.selectedOption}
+                    value="not_applicable"
+                    name="poll-{post.id}"
+                  />
+                  <span class="option-text">Not Applicable</span>
+                </label>
+              </div>
             </div>
-          </div>
-        {:else if post.post_type === 'scale' && post.poll_config}
-          <div class="scale-poll">
-            <div class="scale-labels">
-              {#if post.poll_config.minLabel}
-                <span class="scale-label">{post.poll_config.minLabel}</span>
-              {/if}
-              {#if post.poll_config.maxLabel}
-                <span class="scale-label">{post.poll_config.maxLabel}</span>
-              {/if}
-            </div>
-            <div class="slider-container">
-              <div class="slider-wrapper">
-                <input
-                  type="range"
-                  bind:value={pollResponses.scaleValue}
-                  min={post.poll_config.min}
-                  max={post.poll_config.max}
-                  step="1"
-                  class="scale-slider"
-                  oninput={() => {
-                    pollResponses.specialOption = null
-                  }}
-                />
-                <div class="slider-value">
-                  {pollResponses.scaleValue || post.poll_config.min}
+          {:else if post.post_type === 'scale' && post.poll_config?.type === 'scale'}
+            <div class="scale-poll">
+              <div class="scale-labels">
+                {#if post.poll_config.minLabel}
+                  <span class="scale-label">{post.poll_config.minLabel}</span>
+                {/if}
+                {#if post.poll_config.maxLabel}
+                  <span class="scale-label">{post.poll_config.maxLabel}</span>
+                {/if}
+              </div>
+              <div class="slider-container">
+                <div class="slider-wrapper">
+                  <input
+                    type="range"
+                    bind:value={pollResponses.scaleValue}
+                    min={post.poll_config.min}
+                    max={post.poll_config.max}
+                    step="1"
+                    class="scale-slider"
+                    oninput={() => {
+                      pollResponses.specialOption = null
+                    }}
+                  />
+                  <div class="slider-value">
+                    {pollResponses.scaleValue || post.poll_config.min}
+                  </div>
+                </div>
+                <div class="slider-ticks">
+                  {#each Array.from({length: post.poll_config.max - post.poll_config.min + 1}, (_, i) => post.poll_config.min + i) as value, index (index)}
+                    <span class="tick-mark">{value}</span>
+                  {/each}
                 </div>
               </div>
-              <div class="slider-ticks">
-                {#each Array.from({length: post.poll_config.max - post.poll_config.min + 1}, (_, i) => post.poll_config.min + i) as value, index (index)}
-                  <span class="tick-mark">{value}</span>
-                {/each}
+
+              <!-- Special options for scale -->
+              <div class="special-options">
+                <label class="poll-option special-option">
+                  <input
+                    type="radio"
+                    bind:group={pollResponses.specialOption}
+                    value="prefer_not_to_say"
+                    name="poll-special-{post.id}"
+                    onchange={() => {
+                      pollResponses.scaleValue = undefined
+                    }}
+                  />
+                  <span class="option-text">Prefer Not To Say</span>
+                </label>
+                <label class="poll-option special-option">
+                  <input
+                    type="radio"
+                    bind:group={pollResponses.specialOption}
+                    value="not_applicable"
+                    name="poll-special-{post.id}"
+                    onchange={() => {
+                      pollResponses.scaleValue = undefined
+                    }}
+                  />
+                  <span class="option-text">Not Applicable</span>
+                </label>
               </div>
             </div>
+          {/if}
 
-            <!-- Special options for scale -->
-            <div class="special-options">
-              <label class="poll-option special-option">
-                <input
-                  type="radio"
-                  bind:group={pollResponses.specialOption}
-                  value="prefer_not_to_say"
-                  name="poll-special-{post.id}"
-                  onchange={() => {
-                    pollResponses.scaleValue = undefined
-                  }}
-                />
-                <span class="option-text">Prefer Not To Say</span>
-              </label>
-              <label class="poll-option special-option">
-                <input
-                  type="radio"
-                  bind:group={pollResponses.specialOption}
-                  value="not_applicable"
-                  name="poll-special-{post.id}"
-                  onchange={() => {
-                    pollResponses.scaleValue = undefined
-                  }}
-                />
-                <span class="option-text">Not Applicable</span>
-              </label>
-            </div>
-          </div>
-        {/if}
-
-        <button
-          onclick={submitResponse}
-          class="btn-primary poll-submit"
-          disabled={isSubmitDisabled()}>
-          Submit Response
-        </button>
+          <button
+            class="btn-primary poll-submit"
+            disabled={isSubmitDisabled()}>
+            Submit Response
+          </button>
+        </form>
       </div>
     {/if}
   </div>
@@ -783,15 +793,6 @@ $effect(() => {
       flex-direction: column;
       align-items: flex-start;
       gap: 0.25rem;
-    }
-
-    .user-response {
-      text-align: center;
-    }
-
-    .btn-edit {
-      margin-left: 0;
-      margin-top: 0.5rem;
     }
 
     .poll-form {

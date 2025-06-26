@@ -1,4 +1,5 @@
 <script lang="ts">
+import { enhance } from '$app/forms'
 import { goto } from '$app/navigation'
 import FeedHeader from '$lib/components/FeedHeader.svelte'
 import PlatformStats from '$lib/components/PlatformStats.svelte'
@@ -61,47 +62,11 @@ function formatTimeAgo(dateString: string) {
   return `${diffInDays}d ago`
 }
 
-function getPostTypeIcon(postType: string) {
-  switch (postType) {
-    case 'text':
-      return '💬'
-    case 'radio':
-      return '🔘'
-    case 'scale':
-      return '📊'
-    default:
-      return '📝'
+function performLogout() {
+  const form = document.getElementById('logout-form') as HTMLFormElement
+  if (form) {
+    form.requestSubmit()
   }
-}
-
-function getPostTypeLabel(postType: string) {
-  switch (postType) {
-    case 'text':
-      return 'Discussion'
-    case 'radio':
-      return 'Multiple Choice'
-    case 'scale':
-      return 'Rating Scale'
-    default:
-      return 'Post'
-  }
-}
-
-async function performLogout() {
-  try {
-    // Call logout API to invalidate session cookie
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    })
-  } catch (error) {
-    console.error('Error during logout:', error)
-    // Continue with logout even if API call fails
-  }
-
-  // Redirect to login page
-  goto('/login')
 }
 </script>
 
@@ -138,14 +103,21 @@ async function performLogout() {
             {post}
             {currentUser}
             {formatTimeAgo}
-            {getPostTypeIcon}
-            {getPostTypeLabel}
           />
         </div>
       {/each}
     {/if}
   </div>
 </main>
+
+<!-- Hidden form for logout -->
+<form
+  id="logout-form"
+  method="POST"
+  action="?/logout"
+  style:display="none"
+  use:enhance>
+</form>
 
 <style>
   .container {

@@ -1,4 +1,5 @@
 <script lang="ts">
+import { enhance } from '$app/forms'
 import { goto } from '$app/navigation'
 import ErrorMessage from '$lib/components/login/ErrorMessage.svelte'
 import ExistingUserLogin from '$lib/components/login/ExistingUserLogin.svelte'
@@ -8,6 +9,7 @@ import ModeSelection from '$lib/components/login/ModeSelection.svelte'
 import TokenDisplay from '$lib/components/login/TokenDisplay.svelte'
 import UsernameSelection from '$lib/components/login/UsernameSelection.svelte'
 import { generateUsername } from '$lib/username-generator'
+import type { ActionData } from './$types'
 
 let mode: 'choose' | 'new' | 'existing' = $state('choose')
 let existingToken = $state('')
@@ -20,6 +22,9 @@ let registrationStep: 'username-selection' | 'token-display' =
 let selectedUsername = $state('')
 let generatedToken = $state('')
 
+let createAccountForm = $state<HTMLFormElement>()
+let verifyTokenForm = $state<HTMLFormElement>()
+
 function startUsernameSelection() {
   mode = 'new'
   registrationStep = 'username-selection'
@@ -31,30 +36,8 @@ function generateNewUsername() {
   error = ''
 }
 
-async function confirmUsername() {
-  isLoading = true
-  error = ''
-
-  try {
-    const response = await fetch('/api/auth/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: selectedUsername.trim() }),
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      generatedToken = data.token
-      registrationStep = 'token-display'
-    } else {
-      const data = await response.json()
-      error = data.error || 'Failed to create account'
-    }
-  } catch (err) {
-    error = 'Network error. Please try again.'
-  } finally {
-    isLoading = false
-  }
+function confirmUsername() {
+  createAccountForm?.requestSubmit()
 }
 
 function completeRegistration() {
@@ -70,37 +53,13 @@ function backToModeSelection() {
   error = ''
 }
 
-async function loginWithToken() {
+function loginWithToken() {
   if (!existingToken.trim()) {
     error = 'Please enter your token'
     return
   }
 
-  isLoading = true
-  error = ''
-
-  try {
-    const response = await fetch('/api/auth/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: existingToken.trim() }),
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      if (data.valid) {
-        // Session cookie will be set automatically on server
-        goto('/feed')
-        return
-      }
-    }
-
-    error = 'Invalid token. Please check and try again.'
-  } catch (err) {
-    error = 'Network error. Please try again.'
-  } finally {
-    isLoading = false
-  }
+  verifyTokenForm?.requestSubmit()
 }
 </script>
 
@@ -148,6 +107,43 @@ async function loginWithToken() {
 
     <ErrorMessage {error} />
   </div>
+
+  <!-- Hidden forms for server actions -->
+  <form
+    id="create-account-form"
+    bind:this={createAccountForm}
+    method="POST"
+    action="?/createAccount"
+    style:display="none"
+    use:enhance={() => {
+      isLoading = true
+      return async ({ result, update }) => {
+        if (result.type === 'success') {
+          generatedToken = String(result.data?.token || '')
+          registrationStep = 'token-display'
+        } else {
+          update()
+        }
+      }
+    }}>
+    <input type="hidden" name="username" value={selectedUsername} />
+  </form>
+
+  <form
+    id="verify-token-form"
+    bind:this={verifyTokenForm}
+    method="POST"
+    action="?/verifyToken"
+    style:display="none"
+    use:enhance={() => {
+      isLoading = true
+      return async ({ update }) => {
+        isLoading = false
+        update()
+      }
+    }}>
+    <input type="hidden" name="token" value={existingToken} />
+  </form>
 </main>
 
 <style>

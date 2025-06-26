@@ -1,19 +1,29 @@
 <script lang="ts">
+import { enhance } from '$app/forms'
 import { goto } from '$app/navigation'
+import type { SubmitFunction } from '@sveltejs/kit'
 import { onMount } from 'svelte'
-import type { PageData } from './$types'
+import type { ActionData, PageData } from './$types'
 
 type Props = {
   data: PageData
+  form?: ActionData
 }
 
-const { data }: Props = $props()
+const { data, form }: Props = $props()
 
 let title = $state(data.post.title)
 let content = $state(data.post.content || '')
 let postType = $state(data.post.post_type)
 let isLoading = $state(false)
 let error = $state('')
+
+$effect(() => {
+  if (form?.error) {
+    error = form.error
+    isLoading = false
+  }
+})
 
 // Poll configuration
 let radioOptions = $state<string[]>([])
@@ -27,13 +37,13 @@ onMount(() => {
   if (postType !== 'text' && data.post.poll_config) {
     const config = data.post.poll_config
 
-    if (postType === 'radio' && config.options) {
+    if (postType === 'radio' && config.type === 'radio') {
       radioOptions = config.options.map((opt: any) => opt.label)
-    } else if (postType === 'scale') {
-      scaleMin = config.min || 1
-      scaleMax = config.max || 5
-      scaleMinLabel = config.minLabel || ''
-      scaleMaxLabel = config.maxLabel || ''
+    } else if (postType === 'scale' && config.type === 'scale') {
+      scaleMin = config.min
+      scaleMax = config.max
+      scaleMinLabel = config.minLabel
+      scaleMaxLabel = config.maxLabel
     }
   }
 
@@ -55,69 +65,61 @@ function updateOption(index: number, value: string) {
   radioOptions[index] = value
 }
 
-async function submitUpdate(event) {
-  event.preventDefault()
-
+function validateAndSubmit() {
   if (!title.trim()) {
     error = 'Title is required'
-    return
+    return false
+  }
+
+  if (postType === 'text' && !content.trim()) {
+    error = 'Content is required for text posts'
+    return false
+  }
+
+  if (postType === 'radio') {
+    const validOptions = radioOptions.filter((opt) => opt.trim())
+    if (validOptions.length < 2) {
+      error = 'Multiple choice polls need at least 2 options'
+      return false
+    }
   }
 
   isLoading = true
   error = ''
+  return true
+}
 
-  try {
-    let pollConfig = null
-
-    // Build poll configuration based on post type
-    if (postType === 'radio') {
-      const validOptions = radioOptions.filter((opt) => opt.trim())
-      if (validOptions.length < 2) {
-        error = 'Multiple choice polls need at least 2 options'
-        isLoading = false
-        return
-      }
-      pollConfig = {
-        type: 'radio',
-        options: validOptions.map((opt, i) => ({
-          id: `opt${i}`,
-          label: opt.trim(),
-        })),
-      }
-    } else if (postType === 'scale') {
-      pollConfig = {
-        type: 'scale',
-        min: scaleMin,
-        max: scaleMax,
-        minLabel: scaleMinLabel.trim(),
-        maxLabel: scaleMaxLabel.trim(),
-      }
-    }
-
-    const response = await fetch(`/api/posts/${data.post.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title: title.trim(),
-        content: content.trim() || null,
-        postType,
-        pollConfig,
-      }),
+// Get the poll configuration as JSON
+const pollConfigJson = $derived.by(() => {
+  if (postType === 'radio') {
+    const validOptions = radioOptions.filter((opt) => opt.trim())
+    return JSON.stringify({
+      type: 'radio',
+      options: validOptions.map((opt, i) => ({
+        id: `opt${i}`,
+        label: opt.trim(),
+      })),
     })
+  }
+  if (postType === 'scale') {
+    return JSON.stringify({
+      type: 'scale',
+      min: scaleMin,
+      max: scaleMax,
+      minLabel: scaleMinLabel.trim(),
+      maxLabel: scaleMaxLabel.trim(),
+    })
+  }
+  return ''
+})
 
-    if (response.ok) {
-      const result = await response.json()
-      goto('/feed')
-    } else {
-      const result = await response.json()
-      error = result.error || 'Failed to update post'
-    }
-  } catch (err) {
-    error = 'Network error. Please try again.'
-  } finally {
+const handleSubmit: SubmitFunction = async (event) => {
+  if (!validateAndSubmit()) {
+    return event.cancel()
+  }
+  return async ({ update }) => {
     isLoading = false
+    update()
   }
 }
 </script>
@@ -140,10 +142,12 @@ async function submitUpdate(event) {
           📊 Rating Scale Poll
         {/if}
       </span>
-      <span class="author-info">@{data.post.username} asked</span>
     </div>
 
-    <form onsubmit={submitUpdate}>
+    <form
+      method="POST"
+      action="?/updatePost"
+      use:enhance={handleSubmit}>
       <!-- Title -->
       <div class="form-group">
         <label for="title">Title *</label>
@@ -172,8 +176,9 @@ async function submitUpdate(event) {
       <!-- Poll Configuration -->
       {#if postType === 'radio'}
         <div class="form-group">
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label>Options:</label>
-          {#each radioOptions as option, index (index)}
+          {#each radioOptions as _option, index (index)}
             <div class="option-input">
               <input
                 type="text"
@@ -192,9 +197,11 @@ async function submitUpdate(event) {
 
       {:else if postType === 'scale'}
         <div class="form-group">
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label>Scale Configuration:</label>
           <div class="scale-config">
             <div class="config-row">
+              <!-- svelte-ignore a11y_label_has_associated_control -->
               <label>Range:</label>
               <input
                 type="number"
@@ -213,10 +220,12 @@ async function submitUpdate(event) {
               />
             </div>
             <div class="config-row">
+              <!-- svelte-ignore a11y_label_has_associated_control -->
               <label>Min Label:</label>
               <input type="text" bind:value={scaleMinLabel} placeholder="e.g., Strongly Disagree" disabled={isLoading} />
             </div>
             <div class="config-row">
+              <!-- svelte-ignore a11y_label_has_associated_control -->
               <label>Max Label:</label>
               <input type="text" bind:value={scaleMaxLabel} placeholder="e.g., Strongly Agree" disabled={isLoading} />
             </div>
@@ -229,6 +238,12 @@ async function submitUpdate(event) {
           {error}
         </div>
       {/if}
+
+      <!-- Hidden fields for form submission -->
+      <input type="hidden" name="title" value={title} />
+      <input type="hidden" name="content" value={content} />
+      <input type="hidden" name="postType" value={postType} />
+      <input type="hidden" name="pollConfig" value={pollConfigJson} />
 
       <div class="form-actions">
         <button type="button" onclick={() => goto('/feed')} class="btn-secondary" disabled={isLoading}>
@@ -278,12 +293,6 @@ async function submitUpdate(event) {
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
     font-size: 0.8rem;
-    font-weight: 500;
-  }
-
-  .author-info {
-    color: #6b7280;
-    font-size: 0.9rem;
     font-weight: 500;
   }
 

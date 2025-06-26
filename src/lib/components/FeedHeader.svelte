@@ -70,6 +70,7 @@ async function copyToken() {
 </header>
 
 {#if showTokenModal}
+  <!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_static_element_interactions -->
   <div class="modal-overlay" onclick={hideToken}>
     <div class="modal">
       <div class="modal-header">
@@ -141,23 +142,6 @@ async function copyToken() {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-  }
-
-  .btn-profile {
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 0.25rem 0.75rem;
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 500;
-    text-decoration: none;
-    transition: all 0.2s;
-  }
-
-  .btn-profile:hover {
-    background: var(--color-primary-hover);
   }
 
   .btn-logout {

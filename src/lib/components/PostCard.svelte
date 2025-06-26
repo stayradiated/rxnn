@@ -1,130 +1,48 @@
 <script lang="ts">
-import { goto, invalidateAll } from '$app/navigation'
-import CommentsSection from './CommentsSection.svelte'
+import { enhance } from '$app/forms'
+import type { PostWithDetails } from '$lib/types.js'
+import type { SubmitFunction } from '@sveltejs/kit'
 import HeartButton from './HeartButton.svelte'
 import PollSection from './PollSection.svelte'
 
 interface Props {
-  post: any
-  currentUser?: any
+  post: PostWithDetails
+  currentUser: {
+    id: number
+  }
   formatTimeAgo: (dateString: string) => string
-  getPostTypeIcon: (postType: string) => string
-  getPostTypeLabel: (postType: string) => string
-  // Interactive poll state for this post
-  pollResponses?: any
-  pollResults?: any
-  userResponse?: any
-  showPollResults?: boolean
-  editingPollResponse?: boolean
-  // Comments state for this post
-  showComments?: boolean
-  postComments?: any[]
-  newComment?: string
-  commentSubmitting?: boolean
-  editingCommentId?: number | null
-  editingCommentContent?: string
-  // Heart state for this post
-  heartCount?: number
-  userHearted?: boolean
 }
 
-let {
-  post = $bindable(),
-  currentUser = null,
-  formatTimeAgo,
-  getPostTypeIcon,
-  getPostTypeLabel,
-  pollResponses = $bindable({}),
-  pollResults = $bindable(post.pollResults || null),
-  userResponse = $bindable(post.userResponse || null),
-  showPollResults = $bindable(!!post.pollResults),
-  editingPollResponse = $bindable(false),
-  showComments = $bindable(false),
-  postComments = $bindable(post.comments || []),
-  newComment = $bindable(''),
-  commentSubmitting = $bindable(false),
-  editingCommentId = $bindable(null),
-  editingCommentContent = $bindable(''),
-  heartCount = $bindable(post.heartCount || 0),
-  userHearted = $bindable(post.userHearted || false),
-}: Props = $props()
+let { post, currentUser, formatTimeAgo }: Props = $props()
 
-// Poll interaction functions
-async function submitPollResponse(responseData: any) {
-  try {
-    const response = await fetch('/api/poll-response', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ postId: post.id, responseData }),
-    })
+const postComments = $derived(post.comments)
+const heartCount = $derived(post.heartCount || 0)
+const userHearted = $derived(post.userHearted || false)
 
-    if (response.ok) {
-      const data = await response.json()
-      userResponse = responseData
-      pollResponses = {} // Clear form
-      editingPollResponse = false // Exit edit mode
-
-      // Only show results if they were returned (minimum threshold met)
-      if (data.pollResults) {
-        pollResults = data.pollResults
-        showPollResults = true
-      } else {
-        pollResults = null
-        showPollResults = false
-      }
-
-      // Update response count only for new responses
-      if (data.isNewResponse) {
-        post = { ...post, response_count: post.response_count + 1 }
-      }
-
-      // Invalidate all data to refresh stats and other server-side data
-      await invalidateAll()
-    } else {
-      console.error('Failed to submit poll response')
-    }
-  } catch (error) {
-    console.error('Error submitting poll response:', error)
-  }
-}
-
-function editPollResponse() {
-  editingPollResponse = true
-  showPollResults = false
-
-  // Populate form with current response
-  if (userResponse) {
-    pollResponses = { ...userResponse }
-  }
-}
+let showComments = $state(false)
+let newComment = $state('')
+let commentSubmitting = $state(false)
+let editingCommentId = $state(null)
+let editingCommentContent = $state('')
 
 // Delete post function
-async function deletePost() {
+const handleDeletePost: SubmitFunction = (event) => {
   if (
     !confirm(
       'Are you sure you want to delete this post? This action cannot be undone.',
     )
   ) {
-    return
+    return event.cancel()
   }
+}
 
-  try {
-    const response = await fetch(`/api/posts/${post.id}`, {
-      method: 'DELETE',
-    })
-
-    if (response.ok) {
-      // Redirect to home page after successful deletion
-      goto('/')
-    } else {
-      const data = await response.json()
-      alert(`Failed to delete post: ${data.error || 'Unknown error'}`)
-    }
-  } catch (error) {
-    console.error('Error deleting post:', error)
-    alert('Failed to delete post. Please try again.')
+const handleDeleteComment: SubmitFunction = (event) => {
+  if (
+    !confirm(
+      'Are you sure you want to delete this comment? This action cannot be undone.',
+    )
+  ) {
+    return event.cancel()
   }
 }
 
@@ -132,39 +50,6 @@ async function deletePost() {
 function toggleComments() {
   // Comments are pre-loaded from server, just toggle visibility
   showComments = !showComments
-}
-
-async function submitComment() {
-  const content = newComment?.trim()
-  if (!content) return
-
-  commentSubmitting = true
-
-  try {
-    const response = await fetch('/api/comments', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ postId: post.id, content }),
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      if (!postComments) {
-        postComments = []
-      }
-      postComments = [...postComments, data.comment]
-      newComment = ''
-
-      // Update comment count
-      post = { ...post, comment_count: post.comment_count + 1 }
-    }
-  } catch (error) {
-    console.error('Error submitting comment:', error)
-  } finally {
-    commentSubmitting = false
-  }
 }
 
 // Comment edit/delete functions
@@ -178,74 +63,22 @@ function cancelEditingComment() {
   editingCommentContent = ''
 }
 
-async function saveEditedComment() {
-  if (!editingCommentId || !editingCommentContent?.trim()) return
-
-  try {
-    const response = await fetch(`/api/comments/${editingCommentId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ content: editingCommentContent.trim() }),
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      // Update the comment in the list
-      postComments = postComments.map((comment: any) =>
-        comment.id === editingCommentId
-          ? { ...comment, content: data.comment.content }
-          : comment,
-      )
-      editingCommentId = null
-      editingCommentContent = ''
-    } else {
-      const data = await response.json()
-      alert(`Failed to update comment: ${data.error || 'Unknown error'}`)
-    }
-  } catch (error) {
-    console.error('Error updating comment:', error)
-    alert('Failed to update comment. Please try again.')
-  }
-}
-
-async function deleteComment(commentId: number) {
-  if (
-    !confirm(
-      'Are you sure you want to delete this comment? This action cannot be undone.',
-    )
-  ) {
-    return
+const handleUpdateComment: SubmitFunction = (event) => {
+  if (!editingCommentContent?.trim()) {
+    alert('Comment content cannot be empty.')
+    return event.cancel()
   }
 
-  try {
-    const response = await fetch(`/api/comments/${commentId}`, {
-      method: 'DELETE',
-    })
-
-    if (response.ok) {
-      // Remove comment from the list
-      postComments = postComments.filter(
-        (comment: any) => comment.id !== commentId,
-      )
-
-      // Update comment count
-      post = { ...post, comment_count: post.comment_count - 1 }
-    } else {
-      const data = await response.json()
-      alert(`Failed to delete comment: ${data.error || 'Unknown error'}`)
-    }
-  } catch (error) {
-    console.error('Error deleting comment:', error)
-    alert('Failed to delete comment. Please try again.')
-  }
+  // Reset editing state after submission
+  editingCommentId = null
+  editingCommentContent = ''
 }
 </script>
 
 <article class="post-card">
   <div class="post-header">
     <div class="post-meta">
+      <span>#{post.id}</span>
       <span class="post-time">{formatTimeAgo(post.created_at)}</span>
     </div>
   </div>
@@ -257,16 +90,7 @@ async function deleteComment(commentId: number) {
   {/if}
 
   <!-- Interactive Poll Section -->
-  <PollSection
-    {post}
-    bind:pollResponses
-    {pollResults}
-    {userResponse}
-    showResults={showPollResults}
-    editing={editingPollResponse}
-    onSubmitResponse={submitPollResponse}
-    onEditResponse={editPollResponse}
-  />
+  <PollSection {post} />
 
   <!-- Post Footer with Actions -->
   <div class="post-footer">
@@ -289,8 +113,8 @@ async function deleteComment(commentId: number) {
         <HeartButton
           targetType="post"
           targetId={post.id}
-          bind:heartCount
-          bind:userHearted
+          {heartCount}
+          {userHearted}
         />
       {:else if heartCount > 0}
         <span class="action-stat">❤️ {heartCount}</span>
@@ -306,13 +130,16 @@ async function deleteComment(commentId: number) {
           <span class="edit-icon">✏️</span>
           Edit
         </a>
-        <button
-          onclick={deletePost}
-          class="delete-button"
-          title="Delete this post">
-          <span class="delete-icon">🗑️</span>
-          Delete
-        </button>
+        <form
+          method="POST"
+          action="?/deletePost"
+          use:enhance={handleDeletePost}>
+          <input type="hidden" name="postId" value={post.id} />
+          <button class="delete-button" title="Delete this post">
+            <span class="delete-icon">🗑️</span>
+            Delete
+          </button>
+        </form>
       </div>
     {/if}
   </div>
@@ -331,23 +158,31 @@ async function deleteComment(commentId: number) {
               {#if editingCommentId === comment.id}
                 <!-- Edit Comment Form -->
                 <div class="comment-edit-form">
-                  <textarea
-                    bind:value={editingCommentContent}
-                    rows="3"
-                    class="comment-edit-textarea"></textarea>
-                  <div class="comment-edit-actions">
-                    <button
-                      onclick={saveEditedComment}
-                      class="btn-primary btn-small"
-                      disabled={!editingCommentContent?.trim()}>
-                      Save
-                    </button>
-                    <button
-                      onclick={cancelEditingComment}
-                      class="btn-secondary btn-small">
-                      Cancel
-                    </button>
-                  </div>
+                  <form
+                    method="POST"
+                    action="?/updateComment"
+                    use:enhance={handleUpdateComment}>
+                    <input type="hidden" name="commentId" value={comment.id} />
+                    <textarea
+                      name="content"
+                      bind:value={editingCommentContent}
+                      rows="3"
+                      class="comment-edit-textarea"></textarea>
+                    <div class="comment-edit-actions">
+                      <button
+                        type="submit"
+                        class="btn-primary btn-small"
+                        disabled={!editingCommentContent?.trim()}>
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onclick={cancelEditingComment}
+                        class="btn-secondary btn-small">
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
                 </div>
               {:else}
                 <!-- Normal Comment Display -->
@@ -376,12 +211,13 @@ async function deleteComment(commentId: number) {
                       title="Edit comment">
                       ✏️
                     </button>
-                    <button
-                      onclick={() => deleteComment(comment.id)}
-                      class="comment-delete-btn"
-                      title="Delete comment">
-                      🗑️
-                    </button>
+                    <form
+                      method="POST"
+                      action="?/deleteComment"
+                      use:enhance={handleDeleteComment}>
+                      <input type="hidden" name="commentId" value={comment.id} />
+                      <button class="comment-delete-btn" title="Delete comment">🗑️</button>
+                    </form>
                   </div>
                 {/if}
               </div>
@@ -393,17 +229,23 @@ async function deleteComment(commentId: number) {
       <!-- New Comment Form -->
       {#if currentUser}
         <div class="comment-form">
-          <textarea
-            bind:value={newComment}
-            placeholder="Write a comment..."
-            rows="2"
-            disabled={commentSubmitting}></textarea>
-          <button
-            onclick={submitComment}
-            class="btn-primary btn-small"
-            disabled={!newComment?.trim() || commentSubmitting}>
-            {commentSubmitting ? 'Posting...' : 'Post Comment'}
-          </button>
+          <form
+            method="POST"
+            action="?/createComment"
+            use:enhance>
+            <input type="hidden" name="postId" value={post.id} />
+            <textarea
+              name="content"
+              bind:value={newComment}
+              placeholder="Write a comment..."
+              rows="2"
+              disabled={commentSubmitting}></textarea>
+            <button
+              class="btn-primary btn-small"
+              disabled={!newComment?.trim() || commentSubmitting}>
+              {commentSubmitting ? 'Posting...' : 'Post Comment'}
+            </button>
+          </form>
         </div>
       {/if}
     </div>
@@ -432,12 +274,6 @@ async function deleteComment(commentId: number) {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-  }
-
-  .post-author {
-    color: var(--color-primary);
-    font-size: 0.9rem;
-    font-weight: 600;
   }
 
   .post-time {
@@ -591,12 +427,6 @@ async function deleteComment(commentId: number) {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.5rem;
-  }
-
-  .comment-username {
-    color: var(--color-primary);
-    font-weight: 500;
-    font-size: 0.9rem;
   }
 
   .comment-time {

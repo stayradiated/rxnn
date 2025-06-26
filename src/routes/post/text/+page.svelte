@@ -1,51 +1,24 @@
 <script lang="ts">
+import { enhance } from '$app/forms'
 import { goto } from '$app/navigation'
-import { preventDefault } from 'svelte/legacy'
+import type { SubmitFunction } from '@sveltejs/kit'
+import type { ActionData } from './$types'
 
-let title = $state('')
-let content = $state('')
+interface Props {
+  form?: ActionData
+}
+
+let { form }: Props = $props()
+
+const error = $derived(form?.error)
+
 let isLoading = $state(false)
-let error = $state('')
 
-async function submitPost() {
-  if (!title.trim()) {
-    error = 'Title is required'
-    return
-  }
-
-  if (!content.trim()) {
-    error = 'Content is required for text posts'
-    return
-  }
-
+const handleSubmit: SubmitFunction = async () => {
   isLoading = true
-  error = ''
-
-  try {
-    const response = await fetch('/api/posts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title: title.trim(),
-        content: content.trim(),
-        postType: 'text',
-        pollConfig: null,
-      }),
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      goto('/feed')
-    } else {
-      const data = await response.json()
-      error = data.error || 'Failed to create post'
-    }
-  } catch (err) {
-    error = 'Network error. Please try again.'
-  } finally {
+  return async ({ update }) => {
     isLoading = false
+    update()
   }
 }
 </script>
@@ -58,13 +31,16 @@ async function submitPost() {
   <div class="composer-card">
     <h1>💬 Create Text Post</h1>
 
-    <form onsubmit={preventDefault(submitPost)}>
+    <form
+      method="POST"
+      action="?/createPost"
+      use:enhance={handleSubmit}>
       <div class="form-group">
         <label for="title">Title *</label>
         <input
           id="title"
+          name="title"
           type="text"
-          bind:value={title}
           placeholder="Ask your question or share your thought..."
           required
           disabled={isLoading}
@@ -75,7 +51,7 @@ async function submitPost() {
         <label for="content">Content *</label>
         <textarea
           id="content"
-          bind:value={content}
+          name="content"
           rows="6"
           placeholder="Share your thoughts, ask a question, or start a discussion..."
           required
