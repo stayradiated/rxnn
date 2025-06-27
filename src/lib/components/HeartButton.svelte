@@ -81,11 +81,11 @@ const handleSubmit: SubmitFunction = () => {
     title={userHearted ? 'Remove heart' : 'Add heart'}>
 
     <span class="heart-icon">
-      {userHearted ? '❤️' : '🤍'}
+      {heartCount > 0 ? '❤️' : '🤍'}
     </span>
 
     {#if heartCount > 0}
-      <span class="heart-count">{heartCount}</span>
+      <span class="heart-count" class:user-hearted={userHearted}>{heartCount}</span>
     {/if}
   </button>
 </form>
@@ -94,21 +94,26 @@ const handleSubmit: SubmitFunction = () => {
   .heart-button {
     display: inline-flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 0.25rem;
-    background: none;
-    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     cursor: pointer;
     padding: 0.25rem 0.5rem;
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 0.9rem;
     color: var(--color-text-secondary, #6b7280);
     transition: all 0.2s ease;
     user-select: none;
+    min-width: 3rem;
+    width: 3rem;
+    backdrop-filter: blur(8px);
   }
 
   .heart-button:hover:not(.disabled) {
     background: var(--color-surface-alt, #f3f4f6);
     color: var(--color-text, #374151);
+    backdrop-filter: blur(4px);
   }
 
   .heart-button.hearted {
@@ -116,7 +121,8 @@ const handleSubmit: SubmitFunction = () => {
   }
 
   .heart-button.hearted:hover:not(.disabled) {
-    background: var(--color-accent-light, #fee2e2);
+    background: var(--color-accent-light, rgba(220, 38, 38, 0.1));
+    backdrop-filter: blur(4px);
   }
 
   .heart-button.disabled {
@@ -138,6 +144,14 @@ const handleSubmit: SubmitFunction = () => {
     font-weight: 500;
     min-width: 1em;
     text-align: center;
+  }
+
+  .heart-count.user-hearted {
+    color: var(--color-accent, #dc2626);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
   }
 
   @media (max-width: 768px) {

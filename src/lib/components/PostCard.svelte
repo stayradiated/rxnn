@@ -18,7 +18,9 @@ const postComments = $derived(post.comments)
 const heartCount = $derived(post.heartCount || 0)
 const userHearted = $derived(post.userHearted || false)
 
-let showComments = $state(post.post_type === 'text')
+// show the comment section by default for text posts or if there is at least
+// one comment
+let showComments = $state(post.post_type === 'text' || post.comment_count > 0)
 let newComment = $state('')
 let commentSubmitting = $state(false)
 let editingCommentId = $state<number | null>(null)
@@ -78,7 +80,7 @@ const handleUpdateComment: SubmitFunction = (event) => {
   <header class="post-header">
     <h2 class="post-title">{post.title}</h2>
 
-    {#if currentUser && currentUser.id === post.user_id}
+    {#if currentUser.id === post.user_id}
       <div class="post-owner-actions">
         <a
           href="/post/{post.id}/edit"
@@ -126,16 +128,14 @@ const handleUpdateComment: SubmitFunction = (event) => {
 
     <div class="spacer"></div>
 
-    {#if currentUser}
+    <div class="post-hearts">
       <HeartButton
         targetType="post"
         targetId={post.id}
         {heartCount}
         {userHearted}
       />
-    {:else if heartCount > 0}
-      <span class="action-stat">❤️ {heartCount}</span>
-    {/if}
+    </div>
   </div>
 
   <!-- Comments Section -->
@@ -143,10 +143,8 @@ const handleUpdateComment: SubmitFunction = (event) => {
     <div class="comments-content">
       {#if postComments && postComments.length > 0}
         <div class="comments-list">
-          {#each postComments as comment (comment.id)}
-            <div class="comment">
-              <div class="comment-header">
-              </div>
+          {#each postComments as comment, index (comment.id)}
+            <div class="comment comment-color-{index % 7}">
 
               {#if editingCommentId === comment.id}
                 <!-- Edit Comment Form -->
@@ -178,25 +176,18 @@ const handleUpdateComment: SubmitFunction = (event) => {
                   </form>
                 </div>
               {:else}
-                <!-- Normal Comment Display -->
-                <div class="comment-content">{comment.content}</div>
-              {/if}
+                <div class="comment-main">
+                  <div class="comment-content">{comment.content}</div>
 
-              <div class="comment-actions">
-                <div class="comment-hearts">
-                  {#if currentUser}
-                    <HeartButton
-                      targetType="comment"
-                      targetId={comment.id}
-                      heartCount={comment.heartCount || 0}
-                      userHearted={comment.userHearted || false}
-                    />
-                  {:else if comment.heartCount > 0}
-                    <span class="heart-count">❤️ {comment.heartCount}</span>
-                  {/if}
+                  <HeartButton
+                    targetType="comment"
+                    targetId={comment.id}
+                    heartCount={comment.heartCount || 0}
+                    userHearted={comment.userHearted || false}
+                  />
                 </div>
 
-                {#if currentUser && currentUser.id === comment.user_id && editingCommentId !== comment.id}
+                {#if currentUser && currentUser.id === comment.user_id}
                   <div class="comment-owner-actions">
                     <button
                       onclick={() => startEditingComment(comment)}
@@ -217,35 +208,33 @@ const handleUpdateComment: SubmitFunction = (event) => {
                     </form>
                   </div>
                 {/if}
-              </div>
+              {/if}
             </div>
           {/each}
         </div>
       {/if}
 
       <!-- New Comment Form -->
-      {#if currentUser}
-        <div class="comment-form">
-          <form
-            method="POST"
-            action="?/createComment"
-            use:enhance
-            class="comment-form-inner">
-            <input type="hidden" name="postId" value={post.id} />
-            <textarea
-              name="content"
-              bind:value={newComment}
-              placeholder="Leave a comment…"
-              rows="1"
-              disabled={commentSubmitting}></textarea>
-            <button
-              class="btn-primary btn-small"
-              disabled={!newComment?.trim() || commentSubmitting}>
-              {commentSubmitting ? 'Posting...' : 'Post'}
-            </button>
-          </form>
-        </div>
-      {/if}
+      <div class="comment-form">
+        <form
+          method="POST"
+          action="?/createComment"
+          use:enhance
+          class="comment-form-inner">
+          <input type="hidden" name="postId" value={post.id} />
+          <textarea
+            name="content"
+            bind:value={newComment}
+            placeholder="Leave a comment…"
+            rows="1"
+            disabled={commentSubmitting}></textarea>
+          <button
+            class="btn-primary btn-small"
+            disabled={!newComment?.trim() || commentSubmitting}>
+            {commentSubmitting ? 'Posting...' : 'Post'}
+          </button>
+        </form>
+      </div>
     </div>
   {/if}
 </article>
@@ -262,6 +251,10 @@ const handleUpdateComment: SubmitFunction = (event) => {
 
   .post-card:hover {
     box-shadow: 0 4px 12px var(--color-shadow);
+  }
+
+  .post-hearts {
+    margin-right: 0.75rem;
   }
 
   .post-footer {
@@ -409,39 +402,61 @@ const handleUpdateComment: SubmitFunction = (event) => {
   }
 
   .comment {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
     border-radius: 6px;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
   }
 
-  .comment-header {
+  .comment-main {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
+  }
+
+  /* Pastel color variations */
+  .comment-color-0 {
+    background: linear-gradient(135deg, rgba(255, 182, 193, 0.08), rgba(255, 218, 185, 0.08));
+    border: 1px solid rgba(255, 182, 193, 0.15);
+  }
+
+  .comment-color-1 {
+    background: linear-gradient(135deg, rgba(173, 216, 230, 0.08), rgba(221, 160, 221, 0.08));
+    border: 1px solid rgba(173, 216, 230, 0.15);
+  }
+
+  .comment-color-2 {
+    background: linear-gradient(135deg, rgba(152, 251, 152, 0.08), rgba(255, 255, 224, 0.08));
+    border: 1px solid rgba(152, 251, 152, 0.15);
+  }
+
+  .comment-color-3 {
+    background: linear-gradient(135deg, rgba(255, 218, 185, 0.08), rgba(255, 192, 203, 0.08));
+    border: 1px solid rgba(255, 218, 185, 0.15);
+  }
+
+  .comment-color-4 {
+    background: linear-gradient(135deg, rgba(230, 230, 250, 0.08), rgba(255, 240, 245, 0.08));
+    border: 1px solid rgba(230, 230, 250, 0.15);
+  }
+
+  .comment-color-5 {
+    background: linear-gradient(135deg, rgba(175, 238, 238, 0.08), rgba(240, 248, 255, 0.08));
+    border: 1px solid rgba(175, 238, 238, 0.15);
+  }
+
+  .comment-color-6 {
+    background: linear-gradient(135deg, rgba(255, 228, 225, 0.08), rgba(255, 239, 213, 0.08));
+    border: 1px solid rgba(255, 228, 225, 0.15);
   }
 
   .comment-content {
     color: var(--color-text);
     line-height: 1.5;
     font-size: 0.95rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+    padding-right: 3rem;
     white-space: pre-wrap;
   }
 
-  .comment-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .comment-hearts {
-    display: flex;
-    align-items: center;
-  }
 
   .comment-owner-actions {
     display: flex;
@@ -509,6 +524,7 @@ const handleUpdateComment: SubmitFunction = (event) => {
   }
 
   .comment-edit-textarea {
+    box-sizing: border-box;
     width: 100%;
     border: 1px solid var(--color-border);
     border-radius: 4px;
