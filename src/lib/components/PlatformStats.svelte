@@ -100,7 +100,7 @@ function handleJumpToUnanswered() {
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
-    animation: pulse 2s infinite;
+    animation: pulse 2s infinite, wiggle 0.3s ease-in-out 0.5s;
     margin-left: 0.5rem;
   }
 
@@ -137,6 +137,12 @@ function handleJumpToUnanswered() {
     50% {
       box-shadow: 0 2px 12px rgba(37, 99, 235, 0.5);
     }
+  }
+
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-2deg); }
+    75% { transform: rotate(2deg); }
   }
 
   @media (max-width: 480px) {
