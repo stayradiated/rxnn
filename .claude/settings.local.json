@@ -16,7 +16,9 @@
       "Bash(sqlite-utils schema:*)",
       "Bash(npm run build:*)",
       "Bash(npm run:*)",
-      "Bash(pnpm run:*)"
+      "Bash(pnpm run:*)",
+      "Bash(pnpm check:*)",
+      "Bash(pnpm build)"
     ],
     "deny": []
   }

@@ -1,4 +1,6 @@
 <script lang="ts">
+import PrimaryButton from '../PrimaryButton.svelte'
+
 interface Props {
   token: string
   isLoading: boolean
@@ -25,12 +27,14 @@ let { token = $bindable(''), isLoading, onLogin, onBack }: Props = $props()
     />
   </div>
 
-  <button
+  <PrimaryButton
     onclick={onLogin}
-    class="btn-primary btn-large"
-    disabled={isLoading || !token.trim()}>
-    {isLoading ? 'Verifying...' : 'Access My Account'}
-  </button>
+    size="large"
+    disabled={isLoading || !token.trim()}
+    loading={isLoading}
+    loadingText="Verifying...">
+    Access My Account
+  </PrimaryButton>
 
   <button
     onclick={onBack}
@@ -86,32 +90,6 @@ let { token = $bindable(''), isLoading, onLogin, onBack }: Props = $props()
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
   }
 
-  .btn-primary {
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    transition: all 0.2s;
-  }
-
-  .btn-large {
-    padding: 1.25rem 2rem;
-    font-size: 1.1rem;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background: var(--color-primary-hover);
-    transform: translateY(-1px);
-  }
-
-  .btn-primary:disabled {
-    background: var(--color-text-muted);
-    cursor: not-allowed;
-    transform: none;
-  }
 
   .btn-link {
     background: none;

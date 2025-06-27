@@ -2,6 +2,8 @@
 import { dev } from '$app/environment'
 import { goto } from '$app/navigation'
 import type { User } from '$lib/types.js'
+import PrimaryButton from './PrimaryButton.svelte'
+import SecondaryButton from './SecondaryButton.svelte'
 
 interface Props {
   currentUser?: User | null
@@ -55,7 +57,7 @@ async function copyToken() {
         </div>
         <div class="user-actions">
           {#if dev}
-            <button onclick={onLogout} class="btn-logout">Logout</button>
+            <SecondaryButton onclick={onLogout} size="small">Logout</SecondaryButton>
           {/if}
         </div>
       </div>
@@ -63,12 +65,12 @@ async function copyToken() {
   </div>
 
   <div class="header-actions">
-    <button onclick={createTextPost} class="btn-primary btn-text">
+    <SecondaryButton onclick={createTextPost}>
       💬 Share a Message
-    </button>
-    <button onclick={createPoll} class="btn-primary btn-poll">
+    </SecondaryButton>
+    <PrimaryButton onclick={createPoll}>
       📊 Ask a Question
-    </button>
+    </PrimaryButton>
   </div>
 </header>
 
@@ -87,9 +89,9 @@ async function copyToken() {
         </p>
         <div class="token-display">
           <code class="token-text">{currentUser?.token || ''}</code>
-          <button class="copy-btn" onclick={copyToken}>
+          <PrimaryButton onclick={copyToken} size="small">
             {copySuccess ? '✓ Copied!' : '📋 Copy'}
-          </button>
+          </PrimaryButton>
         </div>
       </div>
     </div>
@@ -147,45 +149,12 @@ async function copyToken() {
     gap: 0.5rem;
   }
 
-  .btn-logout {
-    background: var(--color-surface-alt);
-    color: var(--color-text-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    padding: 0.25rem 0.75rem;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: all 0.2s;
-  }
-
-  .btn-logout:hover {
-    background: var(--color-border);
-    color: var(--color-text);
-  }
 
   .header-actions {
     display: flex;
     gap: 0.75rem;
   }
 
-  .btn-primary {
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 0.75rem 1.5rem;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-
-  .btn-primary:hover {
-    background: var(--color-primary-hover);
-  }
 
   @media (max-width: 768px) {
     .header {
@@ -288,20 +257,4 @@ async function copyToken() {
     color: var(--color-text);
   }
 
-  .copy-btn {
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 0.75rem 1rem;
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 500;
-    white-space: nowrap;
-    transition: background 0.2s;
-  }
-
-  .copy-btn:hover {
-    background: var(--color-primary-hover);
-  }
 </style>

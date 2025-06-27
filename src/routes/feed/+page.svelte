@@ -4,6 +4,7 @@ import { goto } from '$app/navigation'
 import FeedHeader from '$lib/components/FeedHeader.svelte'
 import PlatformStats from '$lib/components/PlatformStats.svelte'
 import PostCard from '$lib/components/PostCard.svelte'
+import PrimaryButton from '$lib/components/PrimaryButton.svelte'
 import type { PageData } from './$types'
 
 interface Props {
@@ -71,12 +72,12 @@ function performLogout() {
         <h2>👋 Welcome to Anonymous Voice!</h2>
         <p>No posts yet. Be the first to start a conversation!</p>
         <div class="first-post-actions">
-          <button onclick={() => goto('/post/text')} class="btn-primary btn-large">
+          <PrimaryButton onclick={() => goto('/post/text')} size="large">
             💬 Create Text Post
-          </button>
-          <button onclick={() => goto('/post/poll')} class="btn-primary btn-large">
+          </PrimaryButton>
+          <PrimaryButton onclick={() => goto('/post/poll')} size="large">
             📊 Create Poll
-          </button>
+          </PrimaryButton>
         </div>
       </div>
     {:else}
@@ -136,29 +137,6 @@ function performLogout() {
     flex-wrap: wrap;
   }
 
-  .btn-primary {
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 0.75rem 1.5rem;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-
-  .btn-primary:hover {
-    background: var(--color-primary-hover);
-  }
-
-  .btn-large {
-    padding: 1rem 2rem;
-    font-size: 1rem;
-  }
 
   @media (max-width: 768px) {
     .container {

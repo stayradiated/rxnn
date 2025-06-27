@@ -2,6 +2,8 @@
 import { enhance } from '$app/forms'
 import type { PostWithDetails, ResponseData } from '$lib/types'
 import type { SubmitFunction } from '@sveltejs/kit'
+import PrimaryButton from './PrimaryButton.svelte'
+import SecondaryButton from './SecondaryButton.svelte'
 
 interface Props {
   post: PostWithDetails
@@ -75,7 +77,7 @@ $effect(() => {
         <div class="poll-results-header">
           <h4>Poll Results</h4>
           {#if userResponse}
-            <button onclick={editResponse} class="edit-response-btn" title="Edit your response">
+            <SecondaryButton onclick={editResponse} size="small" title="Edit your response">
               <svg
                 width="16"
                 height="16"
@@ -87,7 +89,7 @@ $effect(() => {
                 <path d="m18.5 2.5 a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
               </svg>
               Edit Response
-            </button>
+            </SecondaryButton>
           {/if}
         </div>
         {#if post.post_type === 'radio' && post.poll_config?.type === 'radio' && post.pollResults.type === 'radio'}
@@ -194,9 +196,9 @@ $effect(() => {
             Current responses: {post.response_count}
           </div>
           <div class="pending-actions">
-            <button onclick={editResponse} class="edit-pending-btn">
+            <SecondaryButton onclick={editResponse} size="small">
               ✏️ Edit Response
-            </button>
+            </SecondaryButton>
           </div>
         </div>
       </div>
@@ -310,11 +312,11 @@ $effect(() => {
             </div>
           {/if}
 
-          <button
-            class="btn-primary poll-submit"
+          <PrimaryButton
+            type="submit"
             disabled={isSubmitDisabled()}>
             Submit Response
-          </button>
+          </PrimaryButton>
         </form>
       </div>
     {/if}
@@ -468,30 +470,6 @@ $effect(() => {
     transform: scale(1.1);
   }
 
-  .poll-submit {
-    width: 100%;
-    margin-top: 1rem;
-  }
-
-  .btn-primary {
-    background: var(--color-primary, #2563eb);
-    color: var(--color-text-inverse, white);
-    border: none;
-    border-radius: 6px;
-    padding: 0.75rem 1.5rem;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background: var(--color-primary-dark, #1d4ed8);
-  }
-
-  .btn-primary:disabled {
-    background: var(--color-disabled, #9ca3af);
-    cursor: not-allowed;
-  }
 
   /* Poll Results Styles */
   .poll-results {
@@ -515,33 +493,6 @@ $effect(() => {
     font-size: 1.1rem;
   }
 
-  .edit-response-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: var(--color-surface, rgba(255, 255, 255, 0.7));
-    color: var(--color-text-secondary, #6b7280);
-    border: 1px solid var(--color-border, #e5e7eb);
-    border-radius: 0.375rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    backdrop-filter: blur(4px);
-  }
-
-  .edit-response-btn:hover {
-    background: var(--color-surface-hover, rgba(249, 250, 251, 0.9));
-    color: var(--color-text, #374151);
-    border-color: var(--color-border-hover, #d1d5db);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px var(--color-shadow, rgba(0, 0, 0, 0.1));
-  }
-
-  .edit-response-btn svg {
-    flex-shrink: 0;
-  }
 
   .poll-result-item {
     margin-bottom: 1rem;
@@ -720,25 +671,6 @@ $effect(() => {
     margin-top: 1rem;
   }
 
-  .edit-pending-btn {
-    background: var(--color-primary, #2563eb);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: all 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-  }
-
-  .edit-pending-btn:hover {
-    background: var(--color-primary-dark, #1d4ed8);
-    transform: translateY(-1px);
-  }
 
   .scale-chart {
     display: flex;

@@ -1,4 +1,6 @@
 <script lang="ts">
+import PrimaryButton from '../PrimaryButton.svelte'
+
 interface Props {
   username: string
   token: string
@@ -23,18 +25,18 @@ function copyToken() {
 
   <div class="token-card">
     <code class="token-text">{token}</code>
-    <button
+    <PrimaryButton
       onclick={copyToken}
-      class="btn-copy">
+      size="small">
       📋 Copy
-    </button>
+    </PrimaryButton>
   </div>
 
-  <button
+  <PrimaryButton
     onclick={onComplete}
-    class="btn-primary btn-large">
+    size="large">
     Continue to Platform
-  </button>
+  </PrimaryButton>
 </div>
 
 <style>
@@ -94,39 +96,4 @@ function copyToken() {
     padding: 0;
   }
 
-  .btn-copy {
-    background: #10b981;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    font-size: 0.9rem;
-    white-space: nowrap;
-  }
-
-  .btn-copy:hover {
-    background: #059669;
-  }
-
-  .btn-primary {
-    background: #2563eb;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    transition: all 0.2s;
-  }
-
-  .btn-large {
-    padding: 1.25rem 2rem;
-    font-size: 1.1rem;
-  }
-
-  .btn-primary:hover {
-    background: #1d4ed8;
-    transform: translateY(-1px);
-  }
 </style>

@@ -1,4 +1,7 @@
 <script lang="ts">
+import PrimaryButton from '../PrimaryButton.svelte'
+import SecondaryButton from '../SecondaryButton.svelte'
+
 interface Props {
   username: string
   isLoading: boolean
@@ -21,19 +24,19 @@ let { username, isLoading, onGenerateNew, onConfirm, onBack }: Props = $props()
   </div>
 
   <div class="username-actions">
-    <button
+    <SecondaryButton
       onclick={onGenerateNew}
-      class="btn-secondary"
       disabled={isLoading}>
       🎲 Try Another Name
-    </button>
+    </SecondaryButton>
 
-    <button
+    <PrimaryButton
       onclick={onConfirm}
-      class="btn-primary"
-      disabled={isLoading}>
-      {isLoading ? 'Creating Account...' : '✅ Create Account'}
-    </button>
+      disabled={isLoading}
+      loading={isLoading}
+      loadingText="Creating Account...">
+      ✅ Create Account
+    </PrimaryButton>
   </div>
 
   <button
@@ -86,45 +89,6 @@ let { username, isLoading, onGenerateNew, onConfirm, onBack }: Props = $props()
     margin: 1.5rem 0;
   }
 
-  .btn-primary {
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 0.75rem 1.5rem;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.2s;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background: var(--color-primary-hover);
-    transform: translateY(-1px);
-  }
-
-  .btn-primary:disabled {
-    background: var(--color-text-muted);
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .btn-secondary {
-    background: var(--color-surface-alt);
-    color: var(--color-text);
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    padding: 0.75rem 1.5rem;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.2s;
-  }
-
-  .btn-secondary:hover:not(:disabled) {
-    background: var(--color-border);
-    transform: translateY(-1px);
-  }
 
   .btn-link {
     background: none;
