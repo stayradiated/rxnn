@@ -72,7 +72,7 @@ const isDisabled = $derived(disabled || loading)
   }
 
   .btn-small {
-    padding: 0.5rem 1rem;
+    padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
     min-height: 2rem;
   }

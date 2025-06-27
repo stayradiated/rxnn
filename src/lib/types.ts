@@ -151,6 +151,8 @@ export type {
   ScalePollAggregates,
   PollAggregates,
   PollConfig,
+  RadioPollConfig,
+  ScalePollConfig,
   Post,
   PostType,
   Comment,
