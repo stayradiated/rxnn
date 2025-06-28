@@ -72,7 +72,7 @@ const htmlContent = $derived.by(() => {
 
 <style>
   .markdown-content {
-    color: var(--color-text-secondary);
+    color: var(--color-text);
     line-height: 1.6;
     white-space: normal;
   }
