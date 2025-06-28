@@ -1,4 +1,5 @@
 <script lang="ts">
+import EditIcon from './EditIcon.svelte'
 import SecondaryButton from './SecondaryButton.svelte'
 
 interface Props {
@@ -18,7 +19,7 @@ const { responseCount, onEditResponse }: Props = $props()
     </div>
     <div class="pending-actions">
       <SecondaryButton onclick={onEditResponse} size="small">
-        ✏️ Edit Response
+        <EditIcon size={14} /> Edit Response
       </SecondaryButton>
     </div>
   </div>

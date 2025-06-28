@@ -2,6 +2,8 @@
 import { enhance } from '$app/forms'
 import type { CommentWithDetails, PostWithDetails } from '$lib/types.js'
 import type { SubmitFunction } from '@sveltejs/kit'
+import DeleteIcon from './DeleteIcon.svelte'
+import EditIcon from './EditIcon.svelte'
 import HeartButton from './HeartButton.svelte'
 import MarkdownContent from './MarkdownContent.svelte'
 import PollSection from './PollSection.svelte'
@@ -82,7 +84,7 @@ const handleUpdateComment: SubmitFunction = (event) => {
     {#if currentUser.id === post.user_id}
       <div class="post-owner-actions">
         <SecondaryButton size="small" href="/post/{post.id}/edit" title="Edit this post">
-          ✏️ Edit Post
+          <EditIcon size={14} /> Edit Post
         </SecondaryButton>
         <form
           method="POST"
@@ -90,7 +92,7 @@ const handleUpdateComment: SubmitFunction = (event) => {
           use:enhance={handleDeletePost}>
           <input type="hidden" name="postId" value={post.id} />
           <SecondaryButton type="submit" size="small" variant="danger" title="Delete this post">
-            🗑️ Delete Post
+            <DeleteIcon size={14} /> Delete Post
           </SecondaryButton>
         </form>
       </div>
@@ -190,19 +192,16 @@ const handleUpdateComment: SubmitFunction = (event) => {
               {#if currentUser && currentUser.id === comment.user_id}
                 <div class="comment-owner-actions">
                   <SecondaryButton
+                    size="small"
                     onclick={() => startEditingComment(comment)}
-                    title="Edit comment">
-                    <span class="edit-icon">✏️</span>
-                    Edit
-                  </SecondaryButton>
+                    title="Edit comment"><EditIcon size={14} /> Edit</SecondaryButton>
                   <form
                     method="POST"
                     action="?/deleteComment"
                     use:enhance={handleDeleteComment}>
                     <input type="hidden" name="commentId" value={comment.id} />
-                    <SecondaryButton type="submit" variant="danger" title="Delete comment">
-                      <span class="delete-icon">🗑️</span>
-                      Delete
+                    <SecondaryButton size="small" type="submit" variant="danger" title="Delete comment">
+                      <DeleteIcon size={14} /> Delete
                     </SecondaryButton>
                   </form>
                 </div>
