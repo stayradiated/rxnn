@@ -72,7 +72,12 @@ const handleUpdateComment: SubmitFunction = (event) => {
 
 <article class="post-card">
   <header class="post-header">
-    <h2 class="post-title">{post.title}</h2>
+    <h2 class="post-title" id="post-{post.id}">
+      <a href="#post-{post.id}" class="post-title-link">
+        <span class="link-icon" aria-hidden="true">#</span>
+        {post.title}
+      </a>
+    </h2>
 
     {#if currentUser.id === post.user_id}
       <div class="post-owner-actions">
@@ -329,6 +334,34 @@ const handleUpdateComment: SubmitFunction = (event) => {
     margin-bottom: 0.75rem;
     margin-top: 0;
     line-height: 1.4;
+  }
+
+  .post-title-link {
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+  }
+
+  .post-title-link:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+
+  .link-icon {
+    opacity: 0;
+    font-size: 1.3rem;
+    transition: opacity 0.2s ease;
+    flex-shrink: 0;
+    position: absolute;
+    left: -1rem;
+    color: var(--color-text-secondary);
+  }
+
+  .post-title-link:hover .link-icon {
+    opacity: 0.8;
   }
 
   .post-content {
