@@ -84,7 +84,7 @@ const userResponse = $derived(post.userResponse)
           {@const maxCount = Math.max(...post.pollResults.distribution?.map(d => d.count) || [1])}
           {@const barHeight = maxCount > 0 ? (count / maxCount) * 100 : 0}
 
-          <div class="scale-bar-container" class:user-selected={isUserChoice}>
+          <div class="scale-bar-container">
             <div class="scale-bar-wrapper">
               <div class="scale-bar" style:height="{barHeight}%">
                 <div class="bar-count">{count} ({percentage}%)</div>
@@ -283,8 +283,22 @@ const userResponse = $derived(post.userResponse)
     justify-content: space-between;
     align-items: flex-end;
     margin: 1.5rem 0;
-    padding: 1rem 0.5rem 0.5rem;
-    min-height: 120px;
+    padding: 1rem 1rem 5rem;
+    min-height: 180px;
+    border-radius: 8px;
+    position: relative;
+  }
+
+  .scale-chart::before {
+    content: '';
+    position: absolute;
+    bottom: 5rem;
+    left: 1rem;
+    right: 1rem;
+    height: 2px;
+    background: var(--color-border, #e5e7eb);
+    border-radius: 1px;
+    z-index: 1;
   }
 
   .scale-bar-container {
@@ -292,54 +306,49 @@ const userResponse = $derived(post.userResponse)
     flex-direction: column;
     align-items: center;
     flex: 1;
-    max-width: 60px;
-    margin: 0 2px;
-  }
-
-  .scale-bar-container.user-selected {
-    background: var(--color-primary-light, #eff6ff);
-    border-radius: 6px;
-    padding: 0.25rem;
-    margin: -0.25rem 2px;
+    max-width: 80px;
+    margin: 0 4px;
+    position: relative;
   }
 
   .scale-bar-wrapper {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    height: 80px;
+    height: 120px;
     width: 100%;
-    margin-bottom: 0.5rem;
     position: relative;
   }
 
   .scale-bar {
-    background: var(--color-primary, #2563eb);
+    background: var(--color-primary, #3b82f6);
     border-radius: 4px 4px 0 0;
-    min-height: 4px;
+    min-height: 8px;
     width: 100%;
     display: flex;
     align-items: flex-start;
     justify-content: center;
     position: relative;
-    transition: all 0.3s ease;
-  }
-
-  .scale-bar-container.user-selected .scale-bar {
-    background: var(--color-primary-dark, #1d4ed8);
-    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+    border: 1px solid var(--color-primary-dark, #1d4ed8);
   }
 
   .bar-count {
     position: absolute;
-    top: -1.5rem;
+    bottom: -3rem;
+    left: 50%;
+    transform: translateX(-50%);
     color: var(--color-text, #374151);
     font-size: 0.75rem;
     font-weight: 500;
     white-space: nowrap;
+    text-align: center;
   }
 
   .scale-value {
+    position: absolute;
+    bottom: -1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
     text-align: center;
     font-size: 0.85rem;
     font-weight: 500;
@@ -347,8 +356,8 @@ const userResponse = $derived(post.userResponse)
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
-    min-height: 2.5rem;
+    gap: 0.5rem;
+    min-height: 2rem;
   }
 
   @media (max-width: 768px) {
@@ -364,17 +373,29 @@ const userResponse = $derived(post.userResponse)
     }
 
     .scale-chart {
-      min-height: 100px;
+      min-height: 110px;
       margin: 1rem 0;
+      padding: 0.75rem 0.5rem 3.5rem;
+    }
+
+    .scale-chart::before {
+      bottom: 3.5rem;
+      left: 0.5rem;
+      right: 0.5rem;
     }
 
     .scale-bar-wrapper {
-      height: 60px;
+      height: 70px;
     }
 
     .scale-bar-container {
-      max-width: 50px;
-      margin: 0 1px;
+      max-width: 60px;
+      margin: 0 2px;
+    }
+
+    .scale-value {
+      bottom: -2rem;
+      gap: 0.25rem;
     }
 
     .scale-value {
@@ -383,7 +404,7 @@ const userResponse = $derived(post.userResponse)
 
     .bar-count {
       font-size: 0.7rem;
-      top: -1.25rem;
+      bottom: -2.5rem;
     }
   }
 </style>
