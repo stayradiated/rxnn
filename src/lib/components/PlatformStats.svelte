@@ -1,4 +1,6 @@
 <script lang="ts">
+import SecondaryButton from './SecondaryButton.svelte'
+
 interface Props {
   stats: {
     activeUsers: number
@@ -35,8 +37,9 @@ function handleJumpToUnanswered() {
     </div>
   </div>
 
+  <div class="spacer"></div>
+
   {#if stats.unansweredQuestions > 0 && stats.userHasAnsweredQuestions}
-    <div class="spacer"></div>
     <button class="unanswered-button" onclick={handleJumpToUnanswered}>
       <div class="unanswered-content">
         <div class="unanswered-number">{stats.unansweredQuestions}</div>
@@ -44,6 +47,10 @@ function handleJumpToUnanswered() {
       </div>
     </button>
   {/if}
+
+  <SecondaryButton href="/export" size="small" title="Export poll data as CSV">
+    📦 Export
+  </SecondaryButton>
 </div>
 
 <style>
@@ -145,6 +152,7 @@ function handleJumpToUnanswered() {
     75% { transform: rotate(2deg); }
   }
 
+
   @media (max-width: 480px) {
     .platform-stats {
       flex-direction: column;
@@ -161,5 +169,6 @@ function handleJumpToUnanswered() {
       margin-top: 0.25rem;
       align-self: flex-start;
     }
+
   }
 </style>

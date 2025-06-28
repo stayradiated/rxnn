@@ -30,8 +30,8 @@ $effect(() => {
 let radioOptions: string[] = $state([''])
 let scaleMin = $state(1)
 let scaleMax = $state(5)
-let scaleMinLabel = $state('')
-let scaleMaxLabel = $state('')
+let scaleMinLabel = $state('Strongly Disagree')
+let scaleMaxLabel = $state('Strongly Agree')
 
 function addOption() {
   radioOptions = [...radioOptions, '']

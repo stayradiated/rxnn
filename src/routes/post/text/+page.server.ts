@@ -27,7 +27,7 @@ export const actions: Actions = {
     const { title, content } = createPostSchema.parse(formData)
 
     // Create the post
-    createPost({
+    const newPost = createPost({
       user_id: locals.user.id,
       title,
       content,
@@ -35,7 +35,7 @@ export const actions: Actions = {
       poll_config: null,
     })
 
-    // Redirect to feed after successful creation
-    redirect(303, '/feed')
+    // Redirect to feed with anchor to the new post
+    redirect(303, `/feed#post-${newPost.id}`)
   },
 }

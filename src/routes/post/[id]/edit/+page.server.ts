@@ -69,7 +69,7 @@ export const actions: Actions = {
     }
 
     // Update the post
-    updatePost(
+    const updatedPost = updatePost(
       postId,
       locals.user.id,
       title,
@@ -78,7 +78,7 @@ export const actions: Actions = {
       pollConfig,
     )
 
-    // Redirect to feed after successful update
-    redirect(303, '/feed')
+    // Redirect to feed with anchor to the updated post
+    redirect(303, `/feed#post-${updatedPost.id}`)
   },
 }

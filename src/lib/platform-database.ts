@@ -1049,6 +1049,186 @@ export function getPlatformStats(userId?: number) {
   }
 }
 
+// Export functions for CSV generation
+export function getAllScalePollsForExport() {
+  const db = getDatabase()
+
+  // Get all scale polls
+  const scalePosts = db
+    .prepare<
+      [],
+      {
+        id: number
+        title: string
+        content: string | null
+        poll_config: string
+      }
+    >(`
+      SELECT id, title, content, poll_config
+      FROM posts
+      WHERE post_type = 'scale'
+      ORDER BY sort_order ASC
+    `)
+    .all()
+
+  return scalePosts.map((post) => {
+    const pollConfig = JSON.parse(post.poll_config)
+    const aggregates = getPollAggregates(post.id)
+
+    // Only return data if there are 5+ responses, otherwise return zeros
+    if (!aggregates || aggregates.totalResponses < 5) {
+      return {
+        title: post.title,
+        description: post.content || '',
+        responseCount: 0,
+        minLabel: pollConfig.minLabel || '',
+        maxLabel: pollConfig.maxLabel || '',
+        sums: Array.from(
+          { length: pollConfig.max - pollConfig.min + 1 },
+          () => 0,
+        ),
+        preferNotToSay: 0,
+        notApplicable: 0,
+        min: pollConfig.min,
+        max: pollConfig.max,
+      }
+    }
+
+    if (aggregates.type === 'scale') {
+      // Create array of sums for each scale value
+      const sums = Array.from(
+        { length: pollConfig.max - pollConfig.min + 1 },
+        () => 0,
+      )
+      aggregates.distribution.forEach((item) => {
+        const index = item.value - pollConfig.min
+        if (index >= 0 && index < sums.length) {
+          sums[index] = item.count
+        }
+      })
+
+      const preferNotToSay =
+        aggregates.specialOptions.find(
+          (opt) => opt.type === 'prefer_not_to_say',
+        )?.count || 0
+      const notApplicable =
+        aggregates.specialOptions.find((opt) => opt.type === 'not_applicable')
+          ?.count || 0
+
+      return {
+        title: post.title,
+        description: post.content || '',
+        responseCount: aggregates.totalResponses,
+        minLabel: pollConfig.minLabel || '',
+        maxLabel: pollConfig.maxLabel || '',
+        sums,
+        preferNotToSay,
+        notApplicable,
+        min: pollConfig.min,
+        max: pollConfig.max,
+      }
+    }
+
+    // Fallback for non-scale type (shouldn't happen)
+    return {
+      title: post.title,
+      description: post.content || '',
+      responseCount: 0,
+      minLabel: pollConfig.minLabel || '',
+      maxLabel: pollConfig.maxLabel || '',
+      sums: Array.from(
+        { length: pollConfig.max - pollConfig.min + 1 },
+        () => 0,
+      ),
+      preferNotToSay: 0,
+      notApplicable: 0,
+      min: pollConfig.min,
+      max: pollConfig.max,
+    }
+  })
+}
+
+export function getAllRadioPollsForExport() {
+  const db = getDatabase()
+
+  // Get all radio polls
+  const radioPosts = db
+    .prepare<
+      [],
+      {
+        id: number
+        title: string
+        content: string | null
+        poll_config: string
+      }
+    >(`
+      SELECT id, title, content, poll_config
+      FROM posts
+      WHERE post_type = 'radio'
+      ORDER BY sort_order ASC
+    `)
+    .all()
+
+  return radioPosts.map((post) => {
+    const pollConfig = JSON.parse(post.poll_config)
+    const aggregates = getPollAggregates(post.id)
+
+    // Only return data if there are 5+ responses, otherwise return zeros
+    if (!aggregates || aggregates.totalResponses < 5) {
+      return {
+        title: post.title,
+        description: post.content || '',
+        responseCount: 0,
+        options: pollConfig.options.map(
+          (option: { id: string; label: string }) => ({
+            label: option.label,
+            count: 0,
+          }),
+        ),
+        preferNotToSay: 0,
+        notApplicable: 0,
+      }
+    }
+
+    if (aggregates.type === 'radio') {
+      const preferNotToSay =
+        aggregates.specialOptions.find(
+          (opt) => opt.type === 'prefer_not_to_say',
+        )?.count || 0
+      const notApplicable =
+        aggregates.specialOptions.find((opt) => opt.type === 'not_applicable')
+          ?.count || 0
+
+      return {
+        title: post.title,
+        description: post.content || '',
+        responseCount: aggregates.totalResponses,
+        options: aggregates.options.map((option) => ({
+          label: option.label,
+          count: option.count,
+        })),
+        preferNotToSay,
+        notApplicable,
+      }
+    }
+
+    // Fallback for non-radio type (shouldn't happen)
+    return {
+      title: post.title,
+      description: post.content || '',
+      responseCount: 0,
+      options: pollConfig.options.map(
+        (option: { id: string; label: string }) => ({
+          label: option.label,
+          count: 0,
+        }),
+      ),
+      preferNotToSay: 0,
+      notApplicable: 0,
+    }
+  })
+}
+
 // Initialize database on module load in production
 if (process.env.NODE_ENV === 'production') {
   initDatabase()

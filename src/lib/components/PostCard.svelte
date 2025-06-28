@@ -82,7 +82,7 @@ const handleUpdateComment: SubmitFunction = (event) => {
     {#if currentUser.id === post.user_id}
       <div class="post-owner-actions">
         <SecondaryButton size="small" href="/post/{post.id}/edit" title="Edit this post">
-          ✏️ Edit
+          ✏️ Edit Post
         </SecondaryButton>
         <form
           method="POST"
@@ -90,7 +90,7 @@ const handleUpdateComment: SubmitFunction = (event) => {
           use:enhance={handleDeletePost}>
           <input type="hidden" name="postId" value={post.id} />
           <SecondaryButton type="submit" size="small" variant="danger" title="Delete this post">
-            🗑️ Delete
+            🗑️ Delete Post
           </SecondaryButton>
         </form>
       </div>
