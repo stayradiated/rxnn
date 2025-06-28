@@ -21,7 +21,7 @@ const { post, onEditResponse }: Props = $props()
     <ScalePollResults {post} {onEditResponse} />
   {/if}
 
-  <!-- <SpecialOptionsResults {post} {onEditResponse} /> -->
+  <SpecialOptionsResults {post} {onEditResponse} />
 </div>
 
 <style>

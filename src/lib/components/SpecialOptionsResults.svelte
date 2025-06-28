@@ -9,25 +9,47 @@ interface Props {
 const { post, onEditResponse }: Props = $props()
 
 const userResponse = $derived(post.userResponse)
+
+const preferNotToSayCount = $derived(
+  post.pollResults?.specialOptions?.find(
+    (option) => option.type === 'prefer_not_to_say',
+  )?.count || 0,
+)
+const notApplicableCount = $derived(
+  post.pollResults?.specialOptions?.find(
+    (option) => option.type === 'not_applicable',
+  )?.count || 0,
+)
+const hasSpecialOptions = $derived(
+  post.pollResults?.specialOptions?.some((option) => option.count > 0) || false,
+)
 </script>
 
-{#if post.pollResults?.specialOptions}
+{#if hasSpecialOptions}
   <div class="special-stats">
-    {#each post.pollResults.specialOptions as option, index (index)}
-      {#if option.count > 0}
-        <div class="special-stat">
-          <span class="special-label">
-            {option.type === 'prefer_not_to_say' ? 'Prefer Not To Say' : 'Not Applicable'}
-            {#if userResponse?.specialOption === option.type || userResponse?.selectedOption === option.type}
-              <button onclick={onEditResponse} class="radio-checkmark" title="Edit your response">
-                ✓
-              </button>
-            {/if}
-          </span>
-          <span class="special-count">{option.count}</span>
-        </div>
-      {/if}
-    {/each}
+    {#if preferNotToSayCount > 0}
+      <div class="special-stat">
+        <span class="special-label">
+          Prefer Not To Say
+          {#if userResponse?.specialOption === 'prefer_not_to_say' || userResponse?.selectedOption === 'prefer_not_to_say'}
+            <div class="radio-checkmark">✓</div>
+          {/if}
+        </span>
+        <span class="special-count">{preferNotToSayCount}</span>
+      </div>
+    {/if}
+
+    {#if notApplicableCount > 0}
+      <div class="special-stat">
+        <span class="special-label">
+          Not Applicable
+          {#if userResponse?.specialOption === 'not_applicable' || userResponse?.selectedOption === 'not_applicable'}
+            <div class="radio-checkmark">✓</div>
+          {/if}
+        </span>
+        <span class="special-count">{notApplicableCount}</span>
+      </div>
+    {/if}
   </div>
 {/if}
 
@@ -68,18 +90,11 @@ const userResponse = $derived(post.userResponse)
     border-radius: 50%;
     width: 20px;
     height: 20px;
-    cursor: pointer;
     font-size: 0.75rem;
     font-weight: 600;
     margin-left: 0.5rem;
-    transition: all 0.2s;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .radio-checkmark:hover {
-    background: var(--color-primary-dark, #1d4ed8);
-    transform: scale(1.1);
   }
 </style>

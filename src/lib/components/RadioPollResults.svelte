@@ -24,9 +24,7 @@ const totalResponses = $derived(post.pollResults?.totalResponses || 0)
       <span class="option-label">
         {option.label}
         {#if isUserChoice}
-          <button onclick={onEditResponse} class="radio-checkmark" title="Edit your response">
-            ✓
-          </button>
+          <div class="radio-checkmark">✓</div>
         {/if}
       </span>
       <span class="result-stats">{result?.count || 0} votes ({percentage}%)</span>
@@ -84,19 +82,12 @@ const totalResponses = $derived(post.pollResults?.totalResponses || 0)
     border-radius: 50%;
     width: 20px;
     height: 20px;
-    cursor: pointer;
     font-size: 0.75rem;
     font-weight: 600;
     margin-left: 0.5rem;
-    transition: all 0.2s;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .radio-checkmark:hover {
-    background: var(--color-primary-dark, #1d4ed8);
-    transform: scale(1.1);
   }
 
   @media (max-width: 768px) {

@@ -101,11 +101,10 @@ const average = $derived(post.pollResults?.average || 0)
   .scale-chart {
     display: flex;
     justify-content: space-between;
-    margin: 1.5rem 0 4.5rem;
+    margin: 1.5rem 0 5rem;
     height: 120px;
     border-bottom: 2px solid var(--color-border, #e5e7eb);
     gap: 1rem;
-
   }
 
   .scale-bar-container {
