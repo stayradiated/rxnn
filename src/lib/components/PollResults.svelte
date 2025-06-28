@@ -15,13 +15,14 @@ const { post, onEditResponse }: Props = $props()
 
 <div class="poll-results">
   <PollResultsHeader {post} {onEditResponse} />
+
   {#if post.post_type === 'radio'}
-    <RadioPollResults {post} {onEditResponse} />
+    <RadioPollResults {post} />
   {:else if post.post_type === 'scale'}
-    <ScalePollResults {post} {onEditResponse} />
+    <ScalePollResults {post} />
   {/if}
 
-  <SpecialOptionsResults {post} {onEditResponse} />
+  <SpecialOptionsResults {post} />
 </div>
 
 <style>

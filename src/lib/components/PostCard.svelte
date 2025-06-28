@@ -81,18 +81,16 @@ const handleUpdateComment: SubmitFunction = (event) => {
 
     {#if currentUser.id === post.user_id}
       <div class="post-owner-actions">
-        <SecondaryButton href="/post/{post.id}/edit" title="Edit this post">
-          <span class="edit-icon">✏️</span>
-          Edit
+        <SecondaryButton size="small" href="/post/{post.id}/edit" title="Edit this post">
+          ✏️ Edit
         </SecondaryButton>
         <form
           method="POST"
           action="?/deletePost"
           use:enhance={handleDeletePost}>
           <input type="hidden" name="postId" value={post.id} />
-          <SecondaryButton type="submit" variant="danger" title="Delete this post">
-            <span class="delete-icon">🗑️</span>
-            Delete
+          <SecondaryButton type="submit" size="small" variant="danger" title="Delete this post">
+            🗑️ Delete
           </SecondaryButton>
         </form>
       </div>
@@ -316,15 +314,6 @@ const handleUpdateComment: SubmitFunction = (event) => {
     gap: 0.5rem;
     align-items: center;
     flex-shrink: 0;
-  }
-
-
-  .edit-icon {
-    font-size: 0.9rem;
-  }
-
-  .delete-icon {
-    font-size: 0.9rem;
   }
 
   .post-title {

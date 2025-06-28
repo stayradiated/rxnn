@@ -3,10 +3,9 @@ import type { PostWithDetails } from '$lib/types'
 
 interface Props {
   post: Extract<PostWithDetails, { post_type: 'scale' }>
-  onEditResponse: () => void
 }
 
-const { post, onEditResponse }: Props = $props()
+const { post }: Props = $props()
 
 const userResponse = $derived(post.userResponse)
 

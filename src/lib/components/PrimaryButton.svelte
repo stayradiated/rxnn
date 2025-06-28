@@ -7,6 +7,8 @@ interface Props {
   loadingText?: string
   size?: 'small' | 'normal' | 'large'
   type?: 'button' | 'submit'
+  href?: string
+  title?: string
   onclick?: () => void
   children?: Snippet
 }
@@ -17,6 +19,8 @@ let {
   loadingText,
   size = 'normal',
   type = 'button',
+  href,
+  title,
   onclick,
   children,
 }: Props = $props()
@@ -24,17 +28,28 @@ let {
 const isDisabled = $derived(disabled || loading)
 </script>
 
-<button
-  class="btn-primary {size === 'small' ? 'btn-small' : size === 'large' ? 'btn-large' : ''}"
-  {type}
-  disabled={isDisabled}
-  {onclick}>
-  {#if loading && loadingText}
-    {loadingText}
-  {:else}
-    {@render children?.()}
-  {/if}
-</button>
+{#if href}
+  <a {href} class="btn-primary {size === 'small' ? 'btn-small' : size === 'large' ? 'btn-large' : ''}" {title}>
+    {#if loading && loadingText}
+      {loadingText}
+    {:else}
+      {@render children?.()}
+    {/if}
+  </a>
+{:else}
+  <button
+    class="btn-primary {size === 'small' ? 'btn-small' : size === 'large' ? 'btn-large' : ''}"
+    {type}
+    disabled={isDisabled}
+    {title}
+    {onclick}>
+    {#if loading && loadingText}
+      {loadingText}
+    {:else}
+      {@render children?.()}
+    {/if}
+  </button>
+{/if}
 
 <style>
   .btn-primary {
@@ -53,6 +68,10 @@ const isDisabled = $derived(disabled || loading)
     font-weight: 500;
     transition: all 0.2s ease;
     min-height: 2.5rem;
+    box-sizing: border-box;
+    line-height: 1;
+    vertical-align: top;
+    font-family: inherit;
   }
 
   .btn-primary:hover:not(:disabled) {

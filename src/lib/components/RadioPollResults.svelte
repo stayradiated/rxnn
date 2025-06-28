@@ -3,10 +3,9 @@ import type { PostWithDetails } from '$lib/types'
 
 interface Props {
   post: Extract<PostWithDetails, { post_type: 'radio' }>
-  onEditResponse: () => void
 }
 
-const { post, onEditResponse }: Props = $props()
+const { post }: Props = $props()
 
 const userResponse = $derived(post.userResponse)
 
@@ -19,7 +18,7 @@ const totalResponses = $derived(post.pollResults?.totalResponses || 0)
   {@const result = pollResultOptions.find(r => r.option_id === option.id)}
   {@const percentage = result ? Math.round((result.count / totalResponses) * 100) : 0}
   {@const isUserChoice = userResponse?.selectedOption === option.id}
-  <div class="poll-result-item" class:user-selected={isUserChoice}>
+  <div class="poll-result-item">
     <div class="result-header">
       <span class="option-label">
         {option.label}
@@ -68,11 +67,6 @@ const totalResponses = $derived(post.pollResults?.totalResponses || 0)
     background: var(--color-primary, #2563eb);
     height: 100%;
     transition: width 0.3s ease;
-  }
-
-  .user-selected {
-    background: var(--color-primary-light, #eff6ff);
-    border-color: var(--color-primary, #2563eb);
   }
 
   .radio-checkmark {

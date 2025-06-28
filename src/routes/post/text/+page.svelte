@@ -86,14 +86,15 @@ const handleSubmit: SubmitFunction = async () => {
   }
 
   .composer-card {
-    background: white;
+    background: var(--color-bg);
     border-radius: 12px;
     padding: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px var(--color-shadow);
+    border: 1px solid var(--color-border);
   }
 
   h1 {
-    color: #2563eb;
+    color: var(--color-primary);
     margin-bottom: 2rem;
   }
 
@@ -104,7 +105,7 @@ const handleSubmit: SubmitFunction = async () => {
   .form-group label {
     display: block;
     font-weight: 600;
-    color: #374151;
+    color: var(--color-text);
     margin-bottom: 0.5rem;
   }
 
@@ -112,24 +113,26 @@ const handleSubmit: SubmitFunction = async () => {
   .form-group textarea {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     font-size: 1rem;
+    background: var(--color-surface);
+    color: var(--color-text);
   }
 
   .form-group input:focus,
   .form-group textarea:focus {
     outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
   }
 
   .error-message {
-    background: #fef2f2;
-    border: 1px solid #ef4444;
+    background: var(--color-warning-light);
+    border: 1px solid var(--color-error);
     border-radius: 6px;
     padding: 1rem;
-    color: #dc2626;
+    color: var(--color-error);
     margin-bottom: 1rem;
   }
 
