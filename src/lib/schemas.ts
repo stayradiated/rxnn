@@ -16,8 +16,8 @@ export const radioPollConfigSchema = z.object({
 export const scalePollConfigSchema = z
   .object({
     type: z.literal('scale'),
-    min: z.number().int(),
-    max: z.number().int(),
+    min: z.number().int().default(1),
+    max: z.number().int().default(5),
     minLabel: z.string().optional().default(''),
     maxLabel: z.string().optional().default(''),
   })

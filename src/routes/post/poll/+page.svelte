@@ -185,25 +185,6 @@ const handleSubmit: SubmitFunction = async () => {
           <div class="scale-config">
             <div class="config-row">
               <!-- svelte-ignore a11y_label_has_associated_control -->
-              <label>Range:</label>
-              <input
-                type="number"
-                bind:value={scaleMin}
-                min="1"
-                max="9"
-                disabled={isLoading}
-              />
-              <span>to</span>
-              <input
-                type="number"
-                bind:value={scaleMax}
-                min="2"
-                max="10"
-                disabled={isLoading}
-              />
-            </div>
-            <div class="config-row">
-              <!-- svelte-ignore a11y_label_has_associated_control -->
               <label>Min Label:</label>
               <input type="text" bind:value={scaleMinLabel} placeholder="e.g., Strongly Disagree" disabled={isLoading} />
             </div>
@@ -384,10 +365,6 @@ const handleSubmit: SubmitFunction = async () => {
     flex: 1;
   }
 
-  .config-row span {
-    color: #6b7280;
-    font-size: 0.9rem;
-  }
 
   .error-message {
     background: #fef2f2;
