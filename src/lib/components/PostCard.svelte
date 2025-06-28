@@ -172,7 +172,9 @@ const handleUpdateComment: SubmitFunction = (event) => {
               </div>
             {:else}
               <div class="comment-main">
-                <div class="comment-content">{comment.content}</div>
+                <div class="comment-content">
+                  <MarkdownContent content={comment.content} />
+                </div>
 
                 <HeartButton
                   targetType="comment"
@@ -398,12 +400,15 @@ const handleUpdateComment: SubmitFunction = (event) => {
   }
 
   .comment-content {
-    color: var(--color-text);
-    line-height: 1.5;
-    font-size: 0.95rem;
     margin-bottom: 0.5rem;
     padding-right: 3rem;
-    white-space: pre-wrap;
+    font-size: 0.95rem;
+  }
+
+  /* Override MarkdownContent styles for comments */
+  .comment-content :global(.markdown-content) {
+    font-size: 0.95rem;
+    line-height: 1.5;
   }
 
 
