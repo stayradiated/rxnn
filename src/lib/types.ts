@@ -37,6 +37,7 @@ type PostBase = {
   title: string
   content: string | null
   sort_order: number
+  poll_config: PollConfig | null
 }
 
 type Post = PostBase &
@@ -55,25 +56,29 @@ type Post = PostBase &
       }
   )
 
-type PostWithDetails = Omit<Post, 'type'> & {
+type PostWithDetails = PostBase & {
   comment_count: number
   response_count: number
   comments: CommentWithDetails[]
   heartCount: number
   userHearted: boolean
   userResponse: ResponseData | null
+  pollResults: PollAggregates | null
 } & (
     | {
-        type: 'text'
+        post_type: 'text'
+        poll_config: null
         pollResults: null
       }
     | {
-        type: 'radio'
-        pollResults: RadioPollAggregates
+        post_type: 'radio'
+        poll_config: RadioPollConfig
+        pollResults: RadioPollAggregates | null
       }
     | {
-        type: 'scale'
-        pollResults: ScalePollAggregates
+        post_type: 'scale'
+        poll_config: ScalePollConfig
+        pollResults: ScalePollAggregates | null
       }
   )
 

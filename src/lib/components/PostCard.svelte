@@ -114,7 +114,7 @@ const handleUpdateComment: SubmitFunction = (event) => {
 
     <div class="spacer"></div>
 
-    {#if post.type === 'text'}
+    {#if post.post_type === 'text'}
       <div class="post-hearts">
         <HeartButton
           targetType="post"
