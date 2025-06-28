@@ -3,6 +3,7 @@ import { enhance } from '$app/forms'
 import type { CommentWithDetails, PostWithDetails } from '$lib/types.js'
 import type { SubmitFunction } from '@sveltejs/kit'
 import HeartButton from './HeartButton.svelte'
+import MarkdownContent from './MarkdownContent.svelte'
 import PollSection from './PollSection.svelte'
 import PrimaryButton from './PrimaryButton.svelte'
 import SecondaryButton from './SecondaryButton.svelte'
@@ -94,7 +95,15 @@ const handleUpdateComment: SubmitFunction = (event) => {
   </header>
 
   {#if post.content}
-    <p class="post-content">{post.content}</p>
+    {#if post.post_type === 'text'}
+      <div class="post-content">
+        <MarkdownContent content={post.content} />
+      </div>
+    {:else}
+      <div class="post-content">
+        <p class="poll-content">{post.content}</p>
+      </div>
+    {/if}
   {/if}
 
   <!-- Interactive Poll Section -->
@@ -321,10 +330,15 @@ const handleUpdateComment: SubmitFunction = (event) => {
   }
 
   .post-content {
-    color: var(--color-text-secondary);
     margin-bottom: 1rem;
+  }
+
+  /* Styles for non-markdown post content (polls) */
+  .poll-content {
+    color: var(--color-text-secondary);
     line-height: 1.6;
     white-space: pre-wrap;
+    margin: 0;
   }
 
   /* Comments Styles */

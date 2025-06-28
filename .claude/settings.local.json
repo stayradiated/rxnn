@@ -18,7 +18,10 @@
       "Bash(npm run:*)",
       "Bash(pnpm run:*)",
       "Bash(pnpm check:*)",
-      "Bash(pnpm build)"
+      "Bash(pnpm build)",
+      "Bash(pnpm tidy:*)",
+      "Bash(pnpm remove:*)",
+      "Bash(node:*)"
     ],
     "deny": []
   }
