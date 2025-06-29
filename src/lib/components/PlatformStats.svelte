@@ -7,6 +7,7 @@ interface Props {
     totalQuestions: number
     unansweredQuestions: number
     userHasAnsweredQuestions: boolean
+    percentageCompletedAllPolls: number
   }
   onJumpToUnanswered?: () => void
 }
@@ -34,6 +35,14 @@ function handleJumpToUnanswered() {
     <div class="stat-content">
       <div class="stat-number">{stats.totalQuestions}</div>
       <div class="stat-label">Questions</div>
+    </div>
+  </div>
+
+  <div class="stat-item">
+    <div class="stat-icon">✅</div>
+    <div class="stat-content">
+      <div class="stat-number">{stats.percentageCompletedAllPolls}%</div>
+      <div class="stat-label">Answered Everything</div>
     </div>
   </div>
 

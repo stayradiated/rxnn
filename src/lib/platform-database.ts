@@ -1041,11 +1041,39 @@ export function getPlatformStats(userId?: number) {
     userHasAnsweredQuestions = answeredCount.count > 0
   }
 
+  // Calculate percentage of active users who have responded to all polls
+  let percentageCompletedAllPolls = 0
+  if (totalQuestions.count > 0 && activeUsers.count > 0) {
+    const usersCompletedAllPolls = db
+      .prepare<
+        [number],
+        {
+          count: number
+        }
+      >(`
+        SELECT COUNT(*) as count FROM (
+          SELECT user_id FROM poll_responses
+          GROUP BY user_id
+          HAVING COUNT(DISTINCT post_id) = ?
+        )
+      `)
+      .get(totalQuestions.count)
+
+    if (!usersCompletedAllPolls) {
+      throw new Error('Failed to retrieve users who completed all polls count')
+    }
+
+    percentageCompletedAllPolls = Math.round(
+      (usersCompletedAllPolls.count / activeUsers.count) * 100,
+    )
+  }
+
   return {
     activeUsers: activeUsers.count,
     totalQuestions: totalQuestions.count,
     unansweredQuestions,
     userHasAnsweredQuestions,
+    percentageCompletedAllPolls,
   }
 }
 
