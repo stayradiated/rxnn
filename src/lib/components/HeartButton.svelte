@@ -1,5 +1,6 @@
 <script lang="ts">
 import { enhance } from '$app/forms'
+import { invalidateAll } from '$app/navigation'
 import type { SubmitFunction } from '@sveltejs/kit'
 
 interface Props {
@@ -58,6 +59,8 @@ const handleSubmit: SubmitFunction = () => {
         heartCount -= 1
         userHearted = false
       }
+      // Invalidate all data to refresh platform stats
+      await invalidateAll()
     }
   }
 }

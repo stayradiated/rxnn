@@ -10,6 +10,7 @@ interface Props {
     unansweredQuestions: number
     userHasAnsweredQuestions: boolean
     percentageCompletedAllPolls: number
+    totalHearts: number
   }
   posts: PostWithDetails[]
   activeFilters: PostType[]
@@ -85,6 +86,14 @@ function handleJumpToUnanswered() {
       <div class="stat-content">
         <div class="stat-number">{stats.percentageCompletedAllPolls}%</div>
         <div class="stat-label">Answered Everything</div>
+      </div>
+    </div>
+
+    <div class="stat-item">
+      <div class="stat-icon">❤️</div>
+      <div class="stat-content">
+        <div class="stat-number">{stats.totalHearts}</div>
+        <div class="stat-label">Hearts</div>
       </div>
     </div>
 

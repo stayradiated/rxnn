@@ -1068,12 +1068,27 @@ export function getPlatformStats(userId?: number) {
     )
   }
 
+  // Get total heart count across all posts and comments
+  const totalHearts = db
+    .prepare<
+      [],
+      {
+        count: number
+      }
+    >('SELECT COUNT(*) as count FROM hearts')
+    .get()
+
+  if (!totalHearts) {
+    throw new Error('Failed to retrieve total heart count')
+  }
+
   return {
     activeUsers: activeUsers.count,
     totalQuestions: totalQuestions.count,
     unansweredQuestions,
     userHasAnsweredQuestions,
     percentageCompletedAllPolls,
+    totalHearts: totalHearts.count,
   }
 }
 
