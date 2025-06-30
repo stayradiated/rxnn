@@ -62,6 +62,10 @@ let { children }: Props = $props()
     }
   }
 
+  :global(html) {
+    scroll-behavior: smooth;
+  }
+
   :global(body) {
     font-family: 'Open Sans', sans-serif;
     background-color: var(--color-bg);

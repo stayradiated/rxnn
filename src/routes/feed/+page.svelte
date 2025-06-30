@@ -5,6 +5,10 @@ import FeedHeader from '$lib/components/FeedHeader.svelte'
 import PlatformStats from '$lib/components/PlatformStats.svelte'
 import PostCard from '$lib/components/PostCard.svelte'
 import PrimaryButton from '$lib/components/PrimaryButton.svelte'
+import type { PostType } from '$lib/types'
+import { flip } from 'svelte/animate'
+import { quintOut } from 'svelte/easing'
+import { fade, fly } from 'svelte/transition'
 import type { PageData } from './$types'
 
 interface Props {
@@ -16,9 +20,21 @@ let { data }: Props = $props()
 // Get user from server-side data
 let currentUser = $state(data.user)
 
+// Filter state - array of PostTypes to show
+let activeFilters: PostType[] = $state(['text', 'radio', 'scale'])
+
+// Derived filtered posts based on active filters
+const filteredPosts = $derived(
+  data.posts.filter((post) => activeFilters.includes(post.post_type)),
+)
+
+function updateFilters(filters: PostType[]) {
+  activeFilters = filters
+}
+
 function jumpToNextUnanswered() {
-  // Find the first unanswered question (poll that user hasn't responded to)
-  const unansweredPost = data.posts.find((post) => {
+  // Find the first unanswered question (poll that user hasn't responded to) from filtered posts
+  const unansweredPost = filteredPosts.find((post) => {
     // Must be a poll (not text)
     if (post.post_type === 'text') return false
 
@@ -62,13 +78,19 @@ function performLogout() {
   <!-- Header -->
   <FeedHeader {currentUser} onLogout={performLogout} />
 
-  <!-- Platform Statistics -->
-  <PlatformStats stats={data.stats} onJumpToUnanswered={jumpToNextUnanswered} />
+  <!-- Platform Statistics with Filter Buttons -->
+  <PlatformStats
+    stats={data.stats}
+    posts={data.posts}
+    {activeFilters}
+    onFiltersChange={updateFilters}
+    onJumpToUnanswered={jumpToNextUnanswered}
+  />
 
   <!-- Feed -->
   <div class="feed">
     {#if data.posts.length === 0}
-      <div class="empty-state">
+      <div class="empty-state" in:fade={{ duration: 400, delay: 200 }}>
         <h2>👋 Welcome to Anonymous Voice!</h2>
         <p>No posts yet. Be the first to start a conversation!</p>
         <div class="first-post-actions">
@@ -80,9 +102,18 @@ function performLogout() {
           </PrimaryButton>
         </div>
       </div>
+    {:else if filteredPosts.length === 0}
+      <div class="empty-state" in:fade={{ duration: 400, delay: 200 }}>
+        <h2>🔍 No posts match your filter</h2>
+        <p>Try adjusting your filter settings to see more posts.</p>
+      </div>
     {:else}
-      {#each data.posts as post (post.id)}
-        <div id="post-{post.id}">
+      {#each filteredPosts as post, index (post.id)}
+        <div
+          id="post-{post.id}"
+          in:fly={{ y: 20, duration: 400, delay: Math.min(index * 50, 300), easing: quintOut }}
+          out:fly={{ y: -20, duration: 300, easing: quintOut }}
+          animate:flip={{ duration: 400, easing: quintOut }}>
           <PostCard {post} {currentUser} />
         </div>
       {/each}
