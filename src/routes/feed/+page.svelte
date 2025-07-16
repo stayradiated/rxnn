@@ -1,14 +1,13 @@
 <script lang="ts">
-import { enhance } from '$app/forms'
+import { flip } from 'svelte/animate'
+import { quintOut } from 'svelte/easing'
+import { fade, fly } from 'svelte/transition'
 import { goto } from '$app/navigation'
 import FeedHeader from '$lib/components/FeedHeader.svelte'
 import PlatformStats from '$lib/components/PlatformStats.svelte'
 import PostCard from '$lib/components/PostCard.svelte'
 import PrimaryButton from '$lib/components/PrimaryButton.svelte'
 import type { PostType } from '$lib/types'
-import { flip } from 'svelte/animate'
-import { quintOut } from 'svelte/easing'
-import { fade, fly } from 'svelte/transition'
 import type { PageData } from './$types'
 
 interface Props {
@@ -18,7 +17,7 @@ interface Props {
 let { data }: Props = $props()
 
 // Get user from server-side data
-let currentUser = $state(data.user)
+const currentUser = $derived(data.user)
 
 // Filter state - array of PostTypes to show
 let activeFilters: PostType[] = $state(['text', 'radio', 'scale'])
@@ -61,13 +60,6 @@ function jumpToNextUnanswered() {
     }
   }
 }
-
-function performLogout() {
-  const form = document.getElementById('logout-form') as HTMLFormElement
-  if (form) {
-    form.requestSubmit()
-  }
-}
 </script>
 
 <svelte:head>
@@ -76,7 +68,7 @@ function performLogout() {
 
 <main class="container">
   <!-- Header -->
-  <FeedHeader {currentUser} onLogout={performLogout} />
+  <FeedHeader {currentUser} />
 
   <!-- Platform Statistics with Filter Buttons -->
   <PlatformStats
@@ -120,15 +112,6 @@ function performLogout() {
     {/if}
   </div>
 </main>
-
-<!-- Hidden form for logout -->
-<form
-  id="logout-form"
-  method="POST"
-  action="?/logout"
-  style:display="none"
-  use:enhance>
-</form>
 
 <style>
   .container {

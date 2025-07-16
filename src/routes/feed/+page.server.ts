@@ -1,3 +1,6 @@
+import { fail, redirect } from '@sveltejs/kit'
+import { z } from 'zod/v4'
+import { zfd } from 'zod-form-data'
 import { invalidateSession } from '$lib/auth'
 import {
   createComment,
@@ -13,22 +16,15 @@ import {
 } from '$lib/platform-database'
 import { pollResponseDataSchema } from '$lib/schemas'
 import { json } from '$lib/zod-helpers'
-import { fail, redirect } from '@sveltejs/kit'
-import { z } from 'zod/v4'
-import { zfd } from 'zod-form-data'
 import type { Actions, PageServerLoad } from './$types'
 
 export const load: PageServerLoad = async ({ locals }) => {
-  if (!locals.user) {
-    // If the user is not logged in, redirect to the login page
-    throw redirect(303, '/login')
-  }
-
   // Get posts for feed with comments and poll aggregates
+  // Pass user ID if logged in, otherwise null for anonymous viewing
   const posts = getPostsForFeedWithDetails(locals.user?.id)
 
-  // Get platform statistics including user-specific unanswered questions
-  const stats = getPlatformStats(locals.user.id)
+  // Get platform statistics (user-specific if logged in, general if anonymous)
+  const stats = getPlatformStats(locals.user?.id)
 
   return {
     posts,
@@ -191,7 +187,7 @@ export const actions: Actions = {
     }
 
     // Redirect to login page after logout
-    redirect(303, '/login')
+    redirect(303, '/')
   },
 
   deletePost: async ({ request, locals }) => {

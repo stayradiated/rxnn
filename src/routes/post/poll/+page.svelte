@@ -1,9 +1,9 @@
 <script lang="ts">
+import type { SubmitFunction } from '@sveltejs/kit'
 import { enhance } from '$app/forms'
 import { goto } from '$app/navigation'
 import PrimaryButton from '$lib/components/PrimaryButton.svelte'
 import SecondaryButton from '$lib/components/SecondaryButton.svelte'
-import type { SubmitFunction } from '@sveltejs/kit'
 import type { ActionData } from './$types'
 
 type PollType = 'radio' | 'scale'

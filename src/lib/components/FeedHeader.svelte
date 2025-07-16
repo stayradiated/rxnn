@@ -1,5 +1,6 @@
 <script lang="ts">
 import { dev } from '$app/environment'
+import { enhance } from '$app/forms'
 import { goto } from '$app/navigation'
 import type { User } from '$lib/types.js'
 import PrimaryButton from './PrimaryButton.svelte'
@@ -7,10 +8,9 @@ import SecondaryButton from './SecondaryButton.svelte'
 
 interface Props {
   currentUser?: User | null
-  onLogout: () => void
 }
 
-let { currentUser = null, onLogout }: Props = $props()
+let { currentUser = null }: Props = $props()
 let showTokenModal = $state(false)
 let copySuccess = $state(false)
 
@@ -57,7 +57,9 @@ async function copyToken() {
         </div>
         <div class="user-actions">
           {#if dev}
-            <SecondaryButton onclick={onLogout} size="small">Logout</SecondaryButton>
+            <form method="POST" action="?/logout" use:enhance>
+              <SecondaryButton type="submit" size="small">Logout</SecondaryButton>
+            </form>
           {/if}
         </div>
       </div>
@@ -65,12 +67,18 @@ async function copyToken() {
   </div>
 
   <div class="header-actions">
-    <SecondaryButton onclick={createTextPost}>
-      💬 Share a Message
-    </SecondaryButton>
-    <PrimaryButton onclick={createPoll}>
-      📊 Ask a Question
-    </PrimaryButton>
+    {#if currentUser}
+      <SecondaryButton onclick={createTextPost}>
+        💬 Share a Message
+      </SecondaryButton>
+      <PrimaryButton onclick={createPoll}>
+        📊 Ask a Question
+      </PrimaryButton>
+    {:else}
+      <PrimaryButton onclick={() => goto('/login')}>
+        🔐 Login
+      </PrimaryButton>
+    {/if}
   </div>
 </header>
 

@@ -1,8 +1,8 @@
+import { writeToString } from '@fast-csv/format'
 import {
   getAllRadioPollsForExport,
   getAllScalePollsForExport,
 } from '$lib/platform-database'
-import { writeToString } from '@fast-csv/format'
 
 export async function load() {
   // Get poll data for export

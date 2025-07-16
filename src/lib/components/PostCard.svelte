@@ -1,7 +1,7 @@
 <script lang="ts">
+import type { SubmitFunction } from '@sveltejs/kit'
 import { enhance } from '$app/forms'
 import type { CommentWithDetails, PostWithDetails } from '$lib/types.js'
-import type { SubmitFunction } from '@sveltejs/kit'
 import DeleteIcon from './DeleteIcon.svelte'
 import EditIcon from './EditIcon.svelte'
 import HeartButton from './HeartButton.svelte'
@@ -12,9 +12,9 @@ import SecondaryButton from './SecondaryButton.svelte'
 
 interface Props {
   post: PostWithDetails
-  currentUser: {
+  currentUser?: {
     id: number
-  }
+  } | null
 }
 
 let { post, currentUser }: Props = $props()
@@ -81,7 +81,7 @@ const handleUpdateComment: SubmitFunction = (event) => {
       </a>
     </h2>
 
-    {#if currentUser.id === post.user_id}
+    {#if currentUser && currentUser.id === post.user_id}
       <div class="post-owner-actions">
         <SecondaryButton size="small" href="/post/{post.id}/edit" title="Edit this post">
           <EditIcon size={14} /> Edit Post
@@ -112,7 +112,7 @@ const handleUpdateComment: SubmitFunction = (event) => {
   {/if}
 
   <!-- Interactive Poll Section -->
-  <PollSection {post} />
+  <PollSection {post} {currentUser} />
 
   <!-- Post Footer with Actions -->
   <div class="post-footer">
@@ -135,6 +135,7 @@ const handleUpdateComment: SubmitFunction = (event) => {
           targetId={post.id}
           {heartCount}
           {userHearted}
+          disabled={!currentUser}
         />
       </div>
     {/if}
@@ -186,6 +187,7 @@ const handleUpdateComment: SubmitFunction = (event) => {
                   targetId={comment.id}
                   heartCount={comment.heartCount || 0}
                   userHearted={comment.userHearted || false}
+                  disabled={!currentUser}
                 />
               </div>
 
@@ -213,29 +215,35 @@ const handleUpdateComment: SubmitFunction = (event) => {
     {/if}
 
     <!-- New Comment Form -->
-    <div class="comment-form">
-      <form
-        method="POST"
-        action="?/createComment"
-        use:enhance
-        class="comment-form-inner">
-        <input type="hidden" name="postId" value={post.id} />
-        <textarea
-          name="content"
-          bind:value={newComment}
-          placeholder="Leave a comment…"
-          rows="1"
-          disabled={commentSubmitting}></textarea>
-        <PrimaryButton
-          type="submit"
-          size="small"
-          disabled={!newComment?.trim() || commentSubmitting}
-          loading={commentSubmitting}
-          loadingText="Send…">
-          Send
-        </PrimaryButton>
-      </form>
-    </div>
+    {#if currentUser}
+      <div class="comment-form">
+        <form
+          method="POST"
+          action="?/createComment"
+          use:enhance
+          class="comment-form-inner">
+          <input type="hidden" name="postId" value={post.id} />
+          <textarea
+            name="content"
+            bind:value={newComment}
+            placeholder="Leave a comment…"
+            rows="1"
+            disabled={commentSubmitting}></textarea>
+          <PrimaryButton
+            type="submit"
+            size="small"
+            disabled={!newComment?.trim() || commentSubmitting}
+            loading={commentSubmitting}
+            loadingText="Send…">
+            Send
+          </PrimaryButton>
+        </form>
+      </div>
+    {:else}
+      <div class="anonymous-comment-message">
+        <p>🔐 <a href="/login">Sign up or login</a> to leave a comment</p>
+      </div>
+    {/if}
   </div>
 </article>
 
@@ -565,6 +573,28 @@ const handleUpdateComment: SubmitFunction = (event) => {
     outline: none;
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  .anonymous-comment-message {
+    text-align: center;
+    padding: 1rem;
+    background: var(--color-surface-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+  }
+
+  .anonymous-comment-message p {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .anonymous-comment-message a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .anonymous-comment-message a:hover {
+    text-decoration: underline;
   }
 
 

@@ -262,7 +262,7 @@ export function createPost(
   }
 }
 
-export function getPostsForFeedWithDetails(userId: number): PostWithDetails[] {
+export function getPostsForFeedWithDetails(userId?: number): PostWithDetails[] {
   const db = getDatabase()
 
   const posts = db
@@ -290,13 +290,13 @@ export function getPostsForFeedWithDetails(userId: number): PostWithDetails[] {
     .all()
 
   const postIds = posts.map((post) => post.id)
-  const postHearts = getHeartsForPosts(postIds, userId)
+  const postHearts = userId ? getHeartsForPosts(postIds, userId) : {}
 
   return posts.map((post) => {
     // Get comments for this post
     const comments = getCommentsForPost(post.id)
     const commentIds = comments.map((comment) => comment.id)
-    const commentHearts = getHeartsForComments(commentIds, userId)
+    const commentHearts = userId ? getHeartsForComments(commentIds, userId) : {}
 
     // Add heart data to comments
     const commentsWithDetails = comments.map((comment) => ({
@@ -309,13 +309,15 @@ export function getPostsForFeedWithDetails(userId: number): PostWithDetails[] {
     const heartCount = postHearts[post.id]?.count || 0
     const userHearted = postHearts[post.id]?.userHearted || false
 
-    const userResponse = getUserPollResponse(userId, post.id)
+    const userResponse = userId ? getUserPollResponse(userId, post.id) : null
 
-    // Only show poll results if user has already submitted a response AND there are at least 5 total responses
+    // Show poll results if:
+    // - User has submitted a response (logged in users), OR
+    // - User is anonymous and there are at least 5 responses
     let pollResults: PollAggregates | null = null
-    if (userResponse) {
-      const rawPollResults = getPollAggregates(post.id)
-      if (rawPollResults && rawPollResults.totalResponses >= 5) {
+    const rawPollResults = getPollAggregates(post.id)
+    if (rawPollResults && rawPollResults.totalResponses >= 5) {
+      if (userResponse || !userId) {
         pollResults = rawPollResults
       }
     }

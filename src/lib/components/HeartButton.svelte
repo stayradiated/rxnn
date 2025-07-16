@@ -1,7 +1,7 @@
 <script lang="ts">
+import type { SubmitFunction } from '@sveltejs/kit'
 import { enhance } from '$app/forms'
 import { invalidateAll } from '$app/navigation'
-import type { SubmitFunction } from '@sveltejs/kit'
 
 interface Props {
   targetType: 'post' | 'comment'

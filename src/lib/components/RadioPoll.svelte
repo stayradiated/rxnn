@@ -7,7 +7,7 @@ interface Props {
   pollResponses: ResponseData
 }
 
-const { postId, pollConfig, pollResponses }: Props = $props()
+const { postId, pollConfig, pollResponses = $bindable() }: Props = $props()
 </script>
 
 <div class="radio-poll">

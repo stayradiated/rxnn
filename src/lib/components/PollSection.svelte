@@ -1,7 +1,7 @@
 <script lang="ts">
+import type { SubmitFunction } from '@sveltejs/kit'
 import { enhance } from '$app/forms'
 import type { PostWithDetails, ResponseData } from '$lib/types'
-import type { SubmitFunction } from '@sveltejs/kit'
 import PollPending from './PollPending.svelte'
 import PollResults from './PollResults.svelte'
 import PrimaryButton from './PrimaryButton.svelte'
@@ -10,11 +10,15 @@ import ScalePoll from './ScalePoll.svelte'
 
 interface Props {
   post: PostWithDetails
+  currentUser?: {
+    id: number
+  } | null
 }
 
-const { post }: Props = $props()
+const { post, currentUser }: Props = $props()
 
 const userResponse = $derived(post.userResponse)
+const isAnonymous = $derived(!currentUser)
 
 let pollResponses = $state<ResponseData>({})
 let editing = $state(false)
@@ -78,6 +82,12 @@ $effect(() => {
       <PollResults {post} onEditResponse={editResponse} />
     {:else if userResponse && !post.pollResults && !editing}
       <PollPending responseCount={post.response_count} onEditResponse={editResponse} />
+    {:else if isAnonymous}
+      <div class="anonymous-message">
+        <p>🔐 <strong>Sign up to participate in this poll</strong></p>
+        <p>Create an anonymous account to submit your response and see results.</p>
+        <PrimaryButton href="/login">Sign Up / Login</PrimaryButton>
+      </div>
     {:else}
       <div class="poll-form">
         <form
@@ -89,9 +99,9 @@ $effect(() => {
           <input type="hidden" name="responseData" value={JSON.stringify(pollResponseData)} />
 
           {#if post.post_type === 'radio' && post.poll_config?.type === 'radio'}
-            <RadioPoll postId={post.id} pollConfig={post.poll_config} {pollResponses} />
+            <RadioPoll postId={post.id} pollConfig={post.poll_config} bind:pollResponses />
           {:else if post.post_type === 'scale' && post.poll_config?.type === 'scale'}
-            <ScalePoll postId={post.id} pollConfig={post.poll_config} {pollResponses} />
+            <ScalePoll postId={post.id} pollConfig={post.poll_config} bind:pollResponses />
           {/if}
 
           <PrimaryButton
@@ -115,6 +125,23 @@ $effect(() => {
     border: 1px solid var(--color-border, #e5e7eb);
     border-radius: 8px;
     padding: 1.5rem;
+  }
+
+  .anonymous-message {
+    background: var(--color-surface-alt, #f9fafb);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .anonymous-message p {
+    margin: 0 0 1rem 0;
+    color: var(--color-text-secondary);
+  }
+
+  .anonymous-message p:last-of-type {
+    margin-bottom: 1.5rem;
   }
 
   @media (max-width: 768px) {

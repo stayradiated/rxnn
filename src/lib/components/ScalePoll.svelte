@@ -7,7 +7,7 @@ interface Props {
   pollResponses: ResponseData
 }
 
-const { postId, pollConfig, pollResponses }: Props = $props()
+const { postId, pollConfig, pollResponses = $bindable() }: Props = $props()
 
 const min = $derived(pollConfig.min || 1)
 const max = $derived(pollConfig.max || 5)

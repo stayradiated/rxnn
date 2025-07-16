@@ -1,3 +1,7 @@
+import { randomBytes } from 'node:crypto'
+import { fail, redirect } from '@sveltejs/kit'
+import { z } from 'zod/v4'
+import { zfd } from 'zod-form-data'
 import {
   createSession,
   generateSessionToken,
@@ -8,10 +12,6 @@ import {
   findUserByToken,
   isUsernameAvailable,
 } from '$lib/platform-database'
-import { randomBytes } from 'node:crypto'
-import { fail, redirect } from '@sveltejs/kit'
-import { z } from 'zod/v4'
-import { zfd } from 'zod-form-data'
 
 import type { Actions, PageServerLoad } from './$types'
 

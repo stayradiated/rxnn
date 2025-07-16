@@ -1,6 +1,6 @@
 <script lang="ts">
-import type { PostType, PostWithDetails } from '$lib/types'
 import { flushSync } from 'svelte'
+import type { PostType, PostWithDetails } from '$lib/types'
 import SecondaryButton from './SecondaryButton.svelte'
 
 interface Props {
